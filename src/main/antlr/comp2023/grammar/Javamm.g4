@@ -15,22 +15,23 @@ program
 
 
 importDeclaration
-    : 'import' ID ('.' ID)* ';'
+    : 'import' ID ('.' ID)* ';' #ImportDeclare
     ;
 
 
 classDeclaration
-    : 'class' ID ( 'extends' ID )? '{' ( varDeclaration )* ( methodDeclaration )* '}'
+    : 'class' ID ( 'extends' ID )? '{' ( varDeclaration )* ( methodDeclaration )* '}' #ClassDeclare
     ;
 
 varDeclaration
-    : type ID ';'
+    : ('private')? type ID ';' #VarDeclare
+    | ('public')? type ID ';' #VarDeclare
     ;
 
 
 methodDeclaration
-    : ('public')? type ID '(' ( type ID ( ',' type ID )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}'
-    | ('public')? 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' ( varDeclaration)* ( statement )* '}'
+    : ('public')? type ID '(' ( type ID ( ',' type ID )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
+    | ('public')? 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclare
     ;
 
 
@@ -44,13 +45,13 @@ type
     ;
 
 statement
-    : 'while' '(' expression ')' statement
-    | 'if' '(' expression ')' statement 'else' statement
-    | '{' (statement)* '}'
-    | expression ';'
-    | ID '=' INTEGER ';'
-    | ID '=' ID ';'
-    | ID '[' expression ']' '=' expression ';'
+    : 'while' '(' expression ')' statement #Todo
+    | 'if' '(' expression ')' statement 'else' statement #Todo
+    | '{' (statement)* '}' #Todo
+    | expression ';' #Todo
+    | ID '=' INTEGER ';' #Todo
+    | ID '=' ID ';' #Todo
+    | ID '[' expression ']' '=' expression ';' #Todo
     ;
 
 expression

@@ -12,6 +12,7 @@ public class SymbolTableStore implements SymbolTable {
 
     private List<String> imports;
     private String className;
+    private List<Symbol> fields;
 
     @Override
     public List<String> getImports() {
@@ -31,7 +32,7 @@ public class SymbolTableStore implements SymbolTable {
 
     @Override
     public List<Symbol> getFields() {
-        return null;
+        return this.fields;
     }
 
     @Override
