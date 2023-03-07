@@ -3,13 +3,16 @@ package pt.up.fe.comp2023;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import pt.up.fe.comp.TestUtils;
+import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.specs.util.SpecsIo;
 import pt.up.fe.specs.util.SpecsLogs;
 import pt.up.fe.specs.util.SpecsSystem;
+import pt.up.fe.comp2023.visitors.ImportsVisitor;
 
 public class Launcher {
 
@@ -41,6 +44,11 @@ public class Launcher {
         TestUtils.noErrors(parserResult.getReports());
 
         // ... add remaining stages
+
+        SymbolTableStore table = new SymbolTableStore(parserResult);
+
+        table.printImports();
+
     }
 
     private static Map<String, String> parseArgs(String[] args) {
