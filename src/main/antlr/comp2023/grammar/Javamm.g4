@@ -15,7 +15,7 @@ program
 
 
 importDeclaration
-    : 'import' name=ID ('.' ID)* ';' #ImportDeclare
+    : 'import' name+=ID ('.' name+=ID)* ';' #ImportDeclare
     ;
 
 
