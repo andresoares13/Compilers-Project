@@ -1,6 +1,6 @@
 import io.p.n;
 import List;
 
-class T{
+public class T {
 
 }

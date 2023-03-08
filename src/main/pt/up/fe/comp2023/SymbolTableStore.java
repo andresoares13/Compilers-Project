@@ -4,6 +4,7 @@ import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
+import pt.up.fe.comp2023.visitors.ClassesVisitor;
 import pt.up.fe.comp2023.visitors.ImportsVisitor;
 
 import java.util.ArrayList;
@@ -14,20 +15,25 @@ import java.util.Map;
 public class SymbolTableStore implements SymbolTable {
 
     private List<String> imports = new ArrayList<>();
+
+    private List<String> classParameters = new ArrayList<>();
     private String className;
+    private String superName;
     private List<Symbol> fields;
 
 
     public SymbolTableStore(JmmParserResult parserResult) {
         ImportsVisitor importsVisitor = new ImportsVisitor();
-
         importsVisitor.visit(parserResult.getRootNode(),this.imports);
 
+        ClassesVisitor classVisitor = new ClassesVisitor();
+        classVisitor.visit(parserResult.getRootNode(), this.classParameters);
+        this.className = classParameters.get(0);
+        this.superName = classParameters.get(1);
     }
 
     @Override
     public List<String> getImports() {
-
         return this.imports;
     }
 
@@ -38,7 +44,7 @@ public class SymbolTableStore implements SymbolTable {
 
     @Override
     public String getSuper() {
-        return null;
+        return superName;
     }
 
     @Override

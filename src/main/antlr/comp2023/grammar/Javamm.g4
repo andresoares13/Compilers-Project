@@ -20,7 +20,7 @@ importDeclaration
 
 
 classDeclaration
-    : 'class' ID ( 'extends' ID )? '{' ( varDeclaration )* ( methodDeclaration )* '}' #ClassDeclare
+    : ('public' | 'private') 'class' name=ID ( 'extends' extend=ID )? '{' ( varDeclaration )* ( methodDeclaration )* '}' #ClassDeclare
     ;
 
 varDeclaration

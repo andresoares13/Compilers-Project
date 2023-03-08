@@ -10,8 +10,6 @@ import java.util.stream.Collectors;
 
 public class ImportsVisitor extends ReportCollector<List<String>, Boolean> {
 
-
-
     @Override
     protected void buildVisitor() {
         addVisit("Program", this::visitProgram);
@@ -21,9 +19,7 @@ public class ImportsVisitor extends ReportCollector<List<String>, Boolean> {
 
 
     private Boolean visitImportDeclaration(JmmNode importDeclaration, List<String> imports) {
-
         String temp;
-
 
         temp = importDeclaration.get("name").replaceAll("\\[|\\]", ""); // remove the brackets
         String[] strArr = temp.split(", ");
@@ -35,7 +31,6 @@ public class ImportsVisitor extends ReportCollector<List<String>, Boolean> {
         }
         temp = temp.substring(0, temp.length() - 1);
         imports.add(temp);
-
 
         return true;
     }
