@@ -28,8 +28,14 @@ public class SymbolTableStore implements SymbolTable {
 
         ClassesVisitor classVisitor = new ClassesVisitor();
         classVisitor.visit(parserResult.getRootNode(), this.classParameters);
-        this.className = classParameters.get(0);
-        this.superName = classParameters.get(1);
+        if (this.classParameters.size() > 0){
+            this.className = classParameters.get(0);
+            if (this.classParameters.size() > 1){
+                this.superName = classParameters.get(1);
+            }
+        }
+
+
     }
 
     @Override
