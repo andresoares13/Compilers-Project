@@ -22,7 +22,7 @@ public class SymbolTableStore implements SymbolTable {
     private String className;
     private String superName;
     private List<Symbol> fields;
-    private Map<String,List<Symbol>> methods_parameters = new HashMap<String,List<Symbol>>();
+    private Map<String,List<Symbol>> methods_parameters = new HashMap<>();
 
 
 
@@ -65,17 +65,17 @@ public class SymbolTableStore implements SymbolTable {
 
     @Override
     public List<String> getMethods() {
-        return null;
+        return new ArrayList<String>(methods_parameters.keySet());
     }
 
     @Override
     public Type getReturnType(String methodName) {
-        return null;
+        return methods_parameters.get(methodName).get(0).getType();
     }
 
     @Override
     public List<Symbol> getParameters(String methodName) {
-        return null;
+        return methods_parameters.get(methodName).subList(1,methods_parameters.get(methodName).size());
     }
 
     @Override
