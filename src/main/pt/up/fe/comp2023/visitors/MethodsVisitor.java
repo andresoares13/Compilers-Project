@@ -33,10 +33,13 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
 
             for (int i=1; i<methodDeclaration.getChildren().size();i++){
                 JmmNode node = methodDeclaration.getChildren().get(i);
+
                 if (node.getKind().equals("Param")){
                     visitParamOrVar(node,params);
                 }
-                else if(node.getKind().equals("VarDeclaration")){
+
+                else if(node.getKind().equals("VarDeclare")){
+
                     visitParamOrVar(node,vars);
                 }
                 //else{} //node is statement or return
@@ -46,7 +49,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
                     methodDeclaration.get("name"),
                     new Triple<>(methodType,params,vars)
             );
-            System.out.println(methodDeclaration.get("name"));
+
         }
         else{
             //not visiting a MethodDeclare
@@ -66,7 +69,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
             );
             for (int i=1; i<methodDeclaration.getChildren().size();i++){
                 JmmNode node = methodDeclaration.getChildren().get(i);
-                if(node.getKind().equals("VarDeclaration")){
+                if(node.getKind().equals("VarDeclare")){
                     visitParamOrVar(node,vars);
                 }
             }
@@ -74,7 +77,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
                     "main",
                     new Triple<>(methodType,params,vars)
             );
-            System.out.println("main");
+
         }
         else{
             //not visiting a MethodDeclareMain

@@ -24,7 +24,7 @@ classDeclaration
     ;
 
 varDeclaration
-    : type ID ';' #VarDeclare
+    : type name=ID ';' #VarDeclare
     ;
 
 

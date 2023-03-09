@@ -90,4 +90,11 @@ public class SymbolTableStore implements SymbolTable {
             System.out.println(this.imports.get(i));
         }
     }
+
+    public void printVars(){
+        List<Symbol> temp = getLocalVariables("all");
+        for (int i = 0; i<temp.size();i++){
+            System.out.println(temp.get(i).getName());
+        }
+    }
 }

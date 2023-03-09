@@ -47,7 +47,8 @@ public class Launcher {
 
         SymbolTableStore table = new SymbolTableStore(parserResult);
 
-        table.printImports();
+        //table.printImports();
+        //table.printVars();
 
     }
 
