@@ -13,31 +13,26 @@ program
     : (importDeclaration)* classDeclaration EOF
     ;
 
-
 importDeclaration
     : 'import' name+=ID ('.' name+=ID)* ';' #ImportDeclare
     ;
-
 
 classDeclaration
     : 'class' name=ID ( 'extends' extend=ID )? '{' ( varDeclaration )* ( methodDeclaration )* '}' #ClassDeclare
     ;
 
 varDeclaration
-    : type ID ';' #VarDeclare
+    : type name=ID ';' #VarDeclare
     ;
-
 
 methodDeclaration
     : ('public')? type name=ID '(' ( param ( ',' param )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
     | ('public')? 'static' 'void' 'main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
     ;
 
-
 param
     : type name=ID
     ;
-
 
 type locals[boolean isArray=false]
     : name = 'int' ( '[' ']' {$isArray=true;} )?

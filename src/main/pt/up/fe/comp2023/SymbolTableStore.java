@@ -8,6 +8,7 @@ import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp2023.visitors.ClassesVisitor;
 import pt.up.fe.comp2023.visitors.ImportsVisitor;
 import pt.up.fe.comp2023.visitors.MethodsVisitor;
+import pt.up.fe.comp2023.visitors.ProgramVisitor;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -16,32 +17,36 @@ import java.util.List;
 import java.util.Map;
 
 public class SymbolTableStore implements SymbolTable {
-
+    public class StringReference{
+        public String string;
+        public StringReference(String string){
+            this.string=string;
+        }
+        public String toString(){
+            return string;
+        }
+        public void setString(String string) {
+            this.string = string;
+        }
+    }
     private List<String> imports = new ArrayList<>();
 
-    private List<String> classParameters = new ArrayList<>();
-    private String className;
-    private String superName;
-    private List<Symbol> fields;
+    private StringReference className = new StringReference("");
+    private StringReference superName = new StringReference("");
+    private List<Symbol> fields = new ArrayList<>();
     private Map<String, Triple<Type,List<Symbol>,List<Symbol>>> methods_parameters = new HashMap<>();
 
 
 
     public SymbolTableStore(JmmParserResult parserResult) {
-        ImportsVisitor importsVisitor = new ImportsVisitor();
-        importsVisitor.visit(parserResult.getRootNode(),this.imports);
-
-        ClassesVisitor classVisitor = new ClassesVisitor();
-        classVisitor.visit(parserResult.getRootNode(), this.classParameters);
-        if (this.classParameters.size() > 0){
-            this.className = classParameters.get(0);
-            if (this.classParameters.size() > 1){
-                this.superName = classParameters.get(1);
-            }
-        }
-        MethodsVisitor methodsVisitor = new MethodsVisitor();
-        methodsVisitor.visit(parserResult.getRootNode(), this.methods_parameters);
-
+        Map<String,Object> programInfo = new HashMap<>();
+        programInfo.put("imports", imports);
+        programInfo.put("className", className);
+        programInfo.put("superName", superName);
+        programInfo.put("fields", fields);
+        programInfo.put("methods_parameters", methods_parameters);
+        ProgramVisitor programVisitor = new ProgramVisitor();
+        programVisitor.visit(parserResult.getRootNode(), programInfo);
     }
 
     @Override
@@ -51,12 +56,12 @@ public class SymbolTableStore implements SymbolTable {
 
     @Override
     public String getClassName() {
-        return this.className;
+        return this.className.string;
     }
 
     @Override
     public String getSuper() {
-        return superName;
+        return superName.string;
     }
 
     @Override
@@ -66,7 +71,7 @@ public class SymbolTableStore implements SymbolTable {
 
     @Override
     public List<String> getMethods() {
-        return new ArrayList<String>(methods_parameters.keySet());
+        return new ArrayList<>(methods_parameters.keySet());
     }
 
     @Override

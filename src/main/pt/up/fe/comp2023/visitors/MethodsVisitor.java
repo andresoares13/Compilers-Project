@@ -50,6 +50,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
         }
         else{
             //not visiting a MethodDeclare
+
         }
         return true;
     }
@@ -64,10 +65,9 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
                     new Type("String",true)
                     ,methodDeclaration.get("parameter"))
             );
-            for (int i=1; i<methodDeclaration.getChildren().size();i++){
-                JmmNode node = methodDeclaration.getChildren().get(i);
-                if(node.getKind().equals("VarDeclaration")){
-                    visitParamOrVar(node,vars);
+            for (JmmNode child:methodDeclaration.getChildren()){
+                if(child.getKind().equals("VarDeclare")){
+                    visitParamOrVar(child,vars);
                 }
             }
             methods_fields.put(

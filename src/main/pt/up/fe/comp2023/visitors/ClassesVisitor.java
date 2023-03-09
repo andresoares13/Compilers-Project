@@ -1,40 +1,52 @@
 package pt.up.fe.comp2023.visitors;
 
+import org.antlr.v4.runtime.misc.Triple;
+import pt.up.fe.comp.jmm.analysis.table.Symbol;
+import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
+import pt.up.fe.comp2023.SymbolTableStore;
 
 import java.util.List;
+import java.util.Map;
 
-public class ClassesVisitor extends ReportCollector<List<String>, Boolean> {
+import static java.lang.Boolean.parseBoolean;
+
+public class ClassesVisitor extends ReportCollector<Map<String,Object>, Boolean> {
     @Override
     protected void buildVisitor() {
-        addVisit("Program", this::visitProgram);
         addVisit("ClassDeclaration", this::visitClassDeclaration);
-
     }
 
-    private Boolean visitClassDeclaration(JmmNode classDeclaration, List<String> classes) {
-        String className, superName;
-
-        className = classDeclaration.get("name");
-        classes.add(className);
-        if (classDeclaration.hasAttribute("extend")) {
-            superName = classDeclaration.get("extend");
-            classes.add(superName);
+    private Boolean visitClassDeclaration(JmmNode node, Map<String, Object> classInfo) {
+        ((SymbolTableStore.StringReference)classInfo.get("className")).string = node.get("name");
+        if (node.hasAttribute("extend")) {
+            ((SymbolTableStore.StringReference)classInfo.get("superName")).string = node.get("extend");
         }
-
+        //visit children
+        MethodsVisitor methodsVisitor = new MethodsVisitor();
+        for (JmmNode child : node.getChildren()) {
+            if (child.getKind().equals("VarDeclare")) {System.out.println("29");
+                visitField(child, (List<Symbol>) classInfo.get("fields"));
+            } else if (child.getKind().startsWith("MethodDeclare")) {//could be main too, thus startswith
+                methodsVisitor.visit(child,
+                        (Map<String, Triple<Type, List<Symbol>, List<Symbol>>>) classInfo.get("methods_parameters")
+                );
+            }
+        }
         return true;
     }
 
-    
-
-    private Boolean visitProgram(JmmNode program, List<String> classes) {
-        for (JmmNode child : program.getChildren()) {
-            if (child.getKind().equals("ClassDeclare")) {
-                // Process ClassDeclare node here
-                System.out.println(child);
-                visit(child, classes);
-            }
-        }
+    boolean visitField(JmmNode node,List<Symbol> fields){
+        JmmNode typeNode=node.getJmmChild(0);
+        Symbol symbol = new Symbol(
+                new Type(
+                        typeNode.get("name"),
+                        parseBoolean(typeNode.get("isArray"))
+                )
+                ,
+                node.get("name")
+        );
+        fields.add(symbol);
         return true;
     }
 }
