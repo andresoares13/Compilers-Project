@@ -33,10 +33,13 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
 
             for (int i=1; i<methodDeclaration.getChildren().size();i++){
                 JmmNode node = methodDeclaration.getChildren().get(i);
+
                 if (node.getKind().equals("Param")){
                     visitParamOrVar(node,params);
                 }
-                else if(node.getKind().equals("VarDeclaration")){
+
+                else if(node.getKind().equals("VarDeclare")){
+
                     visitParamOrVar(node,vars);
                 }
                 //else{} //node is statement or return
