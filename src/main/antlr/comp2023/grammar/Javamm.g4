@@ -37,7 +37,8 @@ param
 type locals[boolean isArray=false]
     : name = 'int' ( '[' ']' {$isArray=true;} )?
     | name = 'boolean'
-    | name = ID 
+    | name = 'String'
+    | name = ID
     ;
 
 statement
