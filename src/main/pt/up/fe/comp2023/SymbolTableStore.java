@@ -6,7 +6,9 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp2023.visitors.ClassesVisitor;
 import pt.up.fe.comp2023.visitors.ImportsVisitor;
+import pt.up.fe.comp2023.visitors.MethodsVisitor;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +22,8 @@ public class SymbolTableStore implements SymbolTable {
     private String className;
     private String superName;
     private List<Symbol> fields;
+    private Map<String,List<Symbol>> methods_parameters = new HashMap<String,List<Symbol>>();
+
 
 
     public SymbolTableStore(JmmParserResult parserResult) {
@@ -34,7 +38,8 @@ public class SymbolTableStore implements SymbolTable {
                 this.superName = classParameters.get(1);
             }
         }
-
+        MethodsVisitor methodsVisitor = new MethodsVisitor();
+        methodsVisitor.visit(parserResult.getRootNode(), this.methods_parameters);
 
     }
 
@@ -64,22 +69,22 @@ public class SymbolTableStore implements SymbolTable {
     }
 
     @Override
-    public Type getReturnType(String s) {
+    public Type getReturnType(String methodName) {
         return null;
     }
 
     @Override
-    public List<Symbol> getParameters(String s) {
+    public List<Symbol> getParameters(String methodName) {
         return null;
     }
 
     @Override
-    public List<Symbol> getLocalVariables(String s) {
+    public List<Symbol> getLocalVariables(String methodName) {
         return null;
     }
 
     public void printImports(){
-        System.out.println(imports.size());
+
         for (int i = 0; i<this.imports.size();i++){
             System.out.println(this.imports.get(i));
         }

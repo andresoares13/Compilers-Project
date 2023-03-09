@@ -24,24 +24,25 @@ classDeclaration
     ;
 
 varDeclaration
-    : ('private')? type ID ';' #VarDeclare
-    | ('public')? type ID ';' #VarDeclare
+    : type ID ';' #VarDeclare
     ;
 
 
 methodDeclaration
-    : ('public')? type ID '(' ( type ID ( ',' type ID )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
-    | ('public')? 'static' 'void' 'main' '(' 'String' '[' ']' ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclare
+    : ('public')? type name=ID '(' ( param ( ',' param )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
+    | ('public')? 'static' 'void' 'main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
     ;
 
 
+param
+    : type name=ID
+    ;
 
-type
-    : 'int' '[' ']'
-    | 'boolean'
-    | 'String'
-    | 'int'
-    | ID
+
+type locals[boolean isArray=false]
+    : name = 'int' ( '[' ']' {$isArray=true;} )?
+    | name = 'boolean'
+    | name = ID 
     ;
 
 statement

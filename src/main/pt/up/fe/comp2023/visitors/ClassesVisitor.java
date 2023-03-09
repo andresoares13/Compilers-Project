@@ -9,6 +9,7 @@ public class ClassesVisitor extends ReportCollector<List<String>, Boolean> {
     protected void buildVisitor() {
         addVisit("Program", this::visitProgram);
         addVisit("ClassDeclaration", this::visitClassDeclaration);
+
     }
 
     private Boolean visitClassDeclaration(JmmNode classDeclaration, List<String> classes) {
@@ -23,6 +24,8 @@ public class ClassesVisitor extends ReportCollector<List<String>, Boolean> {
 
         return true;
     }
+
+    
 
     private Boolean visitProgram(JmmNode program, List<String> classes) {
         for (JmmNode child : program.getChildren()) {
