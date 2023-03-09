@@ -1,5 +1,6 @@
 package pt.up.fe.comp2023;
 
+import org.antlr.v4.runtime.misc.Triple;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
@@ -22,7 +23,7 @@ public class SymbolTableStore implements SymbolTable {
     private String className;
     private String superName;
     private List<Symbol> fields;
-    private Map<String,List<Symbol>> methods_parameters = new HashMap<>();
+    private Map<String, Triple<Type,List<Symbol>,List<Symbol>>> methods_parameters = new HashMap<>();
 
 
 
@@ -70,23 +71,30 @@ public class SymbolTableStore implements SymbolTable {
 
     @Override
     public Type getReturnType(String methodName) {
-        return methods_parameters.get(methodName).get(0).getType();
+        return methods_parameters.get(methodName).a;
     }
 
     @Override
     public List<Symbol> getParameters(String methodName) {
-        return methods_parameters.get(methodName).subList(1,methods_parameters.get(methodName).size());
+        return methods_parameters.get(methodName).b;
     }
 
     @Override
     public List<Symbol> getLocalVariables(String methodName) {
-        return null;
+        return methods_parameters.get(methodName).c;
     }
 
     public void printImports(){
 
         for (int i = 0; i<this.imports.size();i++){
             System.out.println(this.imports.get(i));
+        }
+    }
+
+    public void printVars(){
+        List<Symbol> temp = getLocalVariables("all");
+        for (int i = 0; i<temp.size();i++){
+            System.out.println(temp.get(i).getName());
         }
     }
 }
