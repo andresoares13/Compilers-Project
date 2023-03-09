@@ -25,7 +25,7 @@ public class ClassesVisitor extends ReportCollector<Map<String,Object>, Boolean>
         //visit children
         MethodsVisitor methodsVisitor = new MethodsVisitor();
         for (JmmNode child : node.getChildren()) {
-            if (child.getKind().equals("VarDeclare")) {System.out.println("29");
+            if (child.getKind().equals("VarDeclare")) {
                 visitField(child, (List<Symbol>) classInfo.get("fields"));
             } else if (child.getKind().startsWith("MethodDeclare")) {//could be main too, thus startswith
                 methodsVisitor.visit(child,

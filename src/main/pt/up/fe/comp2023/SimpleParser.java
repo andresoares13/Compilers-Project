@@ -50,12 +50,21 @@ public class SimpleParser implements JmmParser {
             var parser = new JavammParser(tokens);
 
             // Convert ANTLR CST to JmmNode AST
-            return AntlrParser.parse(lex, parser, startingRule)
+            var result = AntlrParser.parse(lex, parser, startingRule)
                     // If there were no errors and a root node was generated, create a JmmParserResult with the node
                     .map(root -> new JmmParserResult(root, Collections.emptyList(), config))
                     // If there were errors, create an error JmmParserResult without root node
                     .orElseGet(() -> JmmParserResult.newError(new Report(ReportType.WARNING, Stage.SYNTATIC, -1,
                             "There were syntax errors during parsing, terminating")));
+
+            var errorsNum = parser.getNumberOfSyntaxErrors();
+            if (errorsNum > 0){
+                Report error = new Report(ReportType.ERROR,Stage.SYNTATIC, -1, -1, "The parser finished with " + errorsNum + " error(s)");
+                result.getReports().add(error);
+            }
+
+
+            return result;
 
         } catch (Exception e) {
             // There was an uncaught exception during parsing, create an error JmmParserResult without root node

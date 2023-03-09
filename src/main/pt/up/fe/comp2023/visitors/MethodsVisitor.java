@@ -49,7 +49,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
                     methodDeclaration.get("name"),
                     new Triple<>(methodType,params,vars)
             );
-            System.out.println(methodDeclaration.get("name"));
+
         }
         else{
             //not visiting a MethodDeclare
@@ -77,7 +77,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
                     "main",
                     new Triple<>(methodType,params,vars)
             );
-            System.out.println("main");
+
         }
         else{
             //not visiting a MethodDeclareMain
