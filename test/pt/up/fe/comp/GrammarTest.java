@@ -59,6 +59,14 @@ public class GrammarTest {
         TestUtils.parseVerbose("int foo(int anInt, int[] anArray, boolean aBool, String aString) {return a;}",
                 INSTANCE_METHOD);
     }
+    @Test
+    public void testParam(){
+        TestUtils.parseVerbose("String aString","param");
+    }
+    @Test
+    public void testVarDeclaration(){
+        TestUtils.parseVerbose("String aString;","varDeclaration");
+    }
 
     @Test
     public void testStmtScope() {

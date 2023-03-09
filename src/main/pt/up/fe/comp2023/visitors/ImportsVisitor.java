@@ -12,9 +12,7 @@ public class ImportsVisitor extends ReportCollector<List<String>, Boolean> {
 
     @Override
     protected void buildVisitor() {
-        addVisit("Program", this::visitProgram);
         addVisit("ImportDeclaration", this::visitImportDeclaration);
-        setDefaultVisit((node, imports) -> true);
     }
 
 
@@ -33,14 +31,5 @@ public class ImportsVisitor extends ReportCollector<List<String>, Boolean> {
         imports.add(temp);
 
         return true;
-    }
-
-    private Boolean visitProgram(JmmNode program, List<String> imports) {
-
-        for (JmmNode child : program.getChildren()) {
-            visit(child, imports);
-        }
-        return true;
-
     }
 }

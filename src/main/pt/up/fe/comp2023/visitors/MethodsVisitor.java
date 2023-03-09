@@ -17,7 +17,6 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
     protected void buildVisitor() {
         addVisit("MethodDeclare", this::visitMethodDeclaration);
         addVisit("MethodDeclareMain", this::visitMethodDeclarationMain);
-        setDefaultVisit(this::defaultVisitor); //methods_fields
     }
 
 
@@ -81,13 +80,6 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
         }
         else{
             //not visiting a MethodDeclareMain
-        }
-        return true;
-    }
-
-    private Boolean defaultVisitor(JmmNode node, Map<String, Triple<Type,List<Symbol>,List<Symbol>>> methods_fields) {
-        for (JmmNode child : node.getChildren()) {
-            visit(child, methods_fields);
         }
         return true;
     }

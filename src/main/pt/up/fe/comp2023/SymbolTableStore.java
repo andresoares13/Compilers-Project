@@ -22,12 +22,6 @@ public class SymbolTableStore implements SymbolTable {
         public StringReference(String string){
             this.string=string;
         }
-        public String toString(){
-            return string;
-        }
-        public void setString(String string) {
-            this.string = string;
-        }
     }
     private List<String> imports = new ArrayList<>();
 
