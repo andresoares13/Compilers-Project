@@ -8,6 +8,13 @@ class MethodsAndFields{
 	}
 	
 	public boolean getField2(){
+	    if (1 < 2){
+
+	    }
+	    else{
+
+	    }
+
 		return field2;
 	}
 	
@@ -18,7 +25,7 @@ class MethodsAndFields{
 	public int[] all(int a, boolean b, MethodsAndFields maf){
 		int[] c;
 		int b;
-		return c
+		return c;
 	}
 	
 	public static void main(String[] args){
