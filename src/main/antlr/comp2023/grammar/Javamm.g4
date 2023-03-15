@@ -5,11 +5,11 @@ grammar Javamm;
 }
 
 INTEGER : ('-')? [0-9]+ ;
-ID : [a-zA-Z_][a-zA-Z_0-9]* ;
+ID: ['A'-'Z','a'-'z','$','_'](['A'-'Z','a'-'z','0'-'9','$','_'])* ;
 
 WS : [ \t\n\r\f]+ -> skip ;
 
-SINGLE_LINE_COMMENT : '//'  [' ']*  (~['\r', '\n'])* -> skip ;
+SINGLE_LINE_COMMENT : '//' [ \t]* ~[\r\n]* -> skip ;
 MULTI_LINE_COMMENT : '/*' .*? '*/' -> skip ;
 
 program
