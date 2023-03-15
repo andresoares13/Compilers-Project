@@ -4,10 +4,13 @@ grammar Javamm;
     package pt.up.fe.comp2023;
 }
 
-INTEGER : [0-9]+ ;
+INTEGER : ('-')? [0-9]+ ;
 ID : [a-zA-Z_][a-zA-Z_0-9]* ;
 
 WS : [ \t\n\r\f]+ -> skip ;
+
+SINGLE_LINE_COMMENT : '//'  [' ']*  (~['\r', '\n'])* -> skip ;
+MULTI_LINE_COMMENT : '/*' .*? '*/' -> skip ;
 
 program
     : (importDeclaration)* classDeclaration EOF
@@ -41,13 +44,13 @@ type locals[boolean isArray=false]
     | name = ID
     ;
 
+
 statement
-    : 'while' '(' expression ')' statement #Todo
-    | 'if' '(' expression ')' statement 'else' statement #Todo
+    : 'if' '(' expression ')' statement 'else' statement #Todo
+    | 'while' '(' expression ')' statement #Todo
     | '{' (statement)* '}' #Todo
+    | ID '=' expression ';' #Todo
     | expression ';' #Todo
-    | ID '=' INTEGER ';' #Todo
-    | ID '=' ID ';' #Todo
     | ID '[' expression ']' '=' expression ';' #Todo
     ;
 
