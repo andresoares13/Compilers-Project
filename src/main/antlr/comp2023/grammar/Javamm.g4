@@ -62,10 +62,10 @@ expression
     | '!' expression #NegationOp
     | expression '.' 'length' #LengthOp
     | expression '[' expression ']' #IndexOp
-    | expression op='&&' expression #BinaryOp
-    | expression op = '<' expression #BinaryOp
     | expression op=('*' | '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
+    | expression op = '<' expression #BinaryOp
+    | expression op='&&' expression #BinaryOp
     | value=INTEGER #Integer
     | value=ID #Identifier
     | 'true' #True
