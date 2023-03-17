@@ -18,7 +18,8 @@ public class ImportsVisitor extends ReportCollector<List<String>, Boolean> {
 
     private Boolean visitImportDeclaration(JmmNode importDeclaration, List<String> imports) {
         String temp;
-
+        //Object tempObject = importDeclaration.getObject("name");
+        //System.out.println(tempObject.getClass());
         temp = importDeclaration.get("name").replaceAll("\\[|\\]", ""); // remove the brackets
         String[] strArr = temp.split(", ");
         List<String> strList = Arrays.asList(strArr);

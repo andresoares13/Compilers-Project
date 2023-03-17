@@ -46,12 +46,12 @@ type locals[boolean isArray=false]
 
 
 statement
-    : 'if' '(' expression ')' statement 'else' statement #Todo
-    | 'while' '(' expression ')' statement #Todo
-    | '{' (statement)* '}' #Todo
-    | ID '=' expression ';' #Todo
-    | expression ';' #Todo
-    | ID '[' expression ']' '=' expression ';' #Todo
+    : 'if' '(' expression ')' statement 'else' statement #IfElseStatement
+    | 'while' '(' expression ')' statement #WhileStatement
+    | '{' (statement)* '}' #Brackets
+    | ID '=' expression ';' #VarDeclareStatement
+    | expression ';' #SemiColon
+    | ID '[' expression ']' '=' expression ';' #ArrayAccess
     ;
 
 expression
