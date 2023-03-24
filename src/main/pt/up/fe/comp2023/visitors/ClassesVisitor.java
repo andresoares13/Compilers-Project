@@ -1,5 +1,6 @@
 package pt.up.fe.comp2023.visitors;
 
+import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
@@ -29,7 +30,7 @@ public class ClassesVisitor extends ReportCollector<Map<String,Object>, Boolean>
                 visitField(child, (List<Symbol>) classInfo.get("fields"));
             } else if (child.getKind().startsWith("MethodDeclare")) {//could be main too, thus startswith
                 methodsVisitor.visit(child,
-                        (Map<String, Triple<Type, List<Symbol>, List<Symbol>>>) classInfo.get("methods_parameters")
+                        (Map<String, Triple<Pair<Type,Boolean>, List<Symbol>, List<Symbol>>>) classInfo.get("methods_parameters")
                 );
             }
         }

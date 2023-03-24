@@ -1,5 +1,6 @@
 package pt.up.fe.comp2023;
 
+import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
@@ -28,8 +29,8 @@ public class SymbolTableStore implements SymbolTable {
     private StringReference className = new StringReference("");
     private StringReference superName = new StringReference("");
     private List<Symbol> fields = new ArrayList<>();
-    private Map<String, Triple<Type,List<Symbol>,List<Symbol>>> methods_parameters = new HashMap<>();
-
+    private Map<String, Triple<Pair<Type,Boolean>,List<Symbol>,List<Symbol>>> methods_parameters = new HashMap<>();
+    //<String methodName, Triple<Pair<Type methodReturnType, Boolean isPublic>, List<Symbol> parameters, List<Symbol> localVariables>>
 
 
     public SymbolTableStore(JmmParserResult parserResult) {
@@ -70,7 +71,7 @@ public class SymbolTableStore implements SymbolTable {
 
     @Override
     public Type getReturnType(String methodName) {
-        return methods_parameters.get(methodName).a;
+        return methods_parameters.get(methodName).a.a;
     }
 
     @Override
@@ -82,6 +83,8 @@ public class SymbolTableStore implements SymbolTable {
     public List<Symbol> getLocalVariables(String methodName) {
         return methods_parameters.get(methodName).c;
     }
+
+    public boolean getMethodIsPublic(String methodName){return methods_parameters.get(methodName).a.b;}
 
     public void printImports(){
 

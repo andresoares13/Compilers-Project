@@ -1,4 +1,5 @@
 package pt.up.fe.comp2023.visitors;
+import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.Type;
@@ -11,7 +12,7 @@ import java.util.Map;
 
 import static java.lang.Boolean.parseBoolean;
 
-public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Symbol>,List<Symbol>>>,Boolean>{
+public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Pair<Type,Boolean>,List<Symbol>,List<Symbol>>>,Boolean>{
 
     @Override
     protected void buildVisitor() {
@@ -20,8 +21,9 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
     }
 
 
-    private Boolean visitMethodDeclaration(JmmNode methodDeclaration, Map<String, Triple<Type,List<Symbol>,List<Symbol>>> methods_fields) {
+    private Boolean visitMethodDeclaration(JmmNode methodDeclaration, Map<String, Triple<Pair<Type,Boolean>,List<Symbol>,List<Symbol>>> methods_fields) {
         if (methodDeclaration.getKind().equals("MethodDeclare")){
+            Boolean isPublic = Boolean.valueOf(methodDeclaration.get("isPublic"));
             List<Symbol> params = new ArrayList<Symbol>(),
                 vars= new ArrayList<>();
 
@@ -46,7 +48,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
 
             methods_fields.put(
                     methodDeclaration.get("name"),
-                    new Triple<>(methodType,params,vars)
+                    new Triple<>(new Pair<>(methodType,isPublic),params,vars)
             );
 
         }
@@ -57,8 +59,9 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
         return true;
     }
 
-    private Boolean visitMethodDeclarationMain(JmmNode methodDeclaration, Map<String, Triple<Type,List<Symbol>,List<Symbol>>> methods_fields) {
+    private Boolean visitMethodDeclarationMain(JmmNode methodDeclaration, Map<String, Triple<Pair<Type,Boolean>,List<Symbol>,List<Symbol>>> methods_fields) {
         if (methodDeclaration.getKind().equals("MethodDeclareMain")){
+            Boolean isPublic = Boolean.valueOf(methodDeclaration.get("isPublic"));
             List<Symbol> params = new ArrayList<Symbol>(),
                     vars= new ArrayList<>();
 
@@ -74,7 +77,7 @@ public class MethodsVisitor extends AJmmVisitor<Map<String, Triple<Type,List<Sym
             }
             methods_fields.put(
                     "main",
-                    new Triple<>(methodType,params,vars)
+                    new Triple<>(new Pair<>(methodType,isPublic),params,vars)
             );
 
         }
