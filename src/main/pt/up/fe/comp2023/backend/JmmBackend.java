@@ -1,6 +1,7 @@
 package pt.up.fe.comp2023.backend;
 
 import org.specs.comp.ollir.ClassUnit;
+import org.specs.comp.ollir.Field;
 import pt.up.fe.comp.jmm.jasmin.JasminBackend;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
@@ -28,22 +29,46 @@ public class JmmBackend implements JasminBackend {
     }
 
     private String getClassDir(ClassUnit ollirClass) {
-        System.out.println(ollirClass);
-        return "";
+        StringBuilder classDir = new StringBuilder(".class ");
+
+        if(ollirClass.isFinalClass()) {
+            classDir.append("final ");
+        }
+        if(ollirClass.isStaticClass()) {
+            classDir.append("static ");
+        }
+
+        if (ollirClass.getClassAccessModifier().toString().equals("DEFAULT")) {
+            classDir.append("public ");
+        } else {
+            classDir.append(ollirClass.getClassAccessModifier().toString()).append(" ");
+        }
+
+        classDir.append(ollirClass.getClassName());
+        return classDir.toString();
     }
 
     private String getSuperDir(ClassUnit ollirClass) {
-        System.out.println(ollirClass);
-        return "";
+        StringBuilder superDir = new StringBuilder(".super ");
+        if(ollirClass.getSuperClass() == null) {
+            ollirClass.setSuperClass("/java/lang/Object");
+        }
+
+        superDir.append(ollirClass.getSuperClass());
+        return superDir.toString();
     }
 
     private String getFieldsDir(ClassUnit ollirClass) {
-        System.out.println(ollirClass);
-        return "";
+        StringBuilder fieldsDefinitions = new StringBuilder();
+
+
+        return fieldsDefinitions.toString();
     }
 
     private String getMethodsDir(ClassUnit ollirClass) {
-        System.out.println(ollirClass);
-        return "";
+        StringBuilder methodsDefinitions = new StringBuilder();
+
+
+        return methodsDefinitions.toString();
     }
 }
