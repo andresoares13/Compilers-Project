@@ -19,6 +19,7 @@ public class JmmBackend implements JasminBackend {
         jasminCode.append(getClassDir(ollirClass)).append("\n");
         // getSuper
         jasminCode.append(getSuperDir(ollirClass)).append("\n");
+        //.implements ?
         // getFields
         jasminCode.append(getFieldsDir(ollirClass)).append("\n");
         // getMethods
@@ -61,6 +62,27 @@ public class JmmBackend implements JasminBackend {
     private String getFieldsDir(ClassUnit ollirClass) {
         StringBuilder fieldsDefinitions = new StringBuilder();
 
+        for(Field field: ollirClass.getFields()) {
+            fieldsDefinitions.append(".field ");
+
+            if(field.getFieldAccessModifier().toString().equals("DEFAULT")) {
+                fieldsDefinitions.append("private ");
+            } else {
+                fieldsDefinitions.append(field.getFieldAccessModifier().toString().toLowerCase()).append(" ");
+            }
+
+            if(field.isStaticField()) {
+                fieldsDefinitions.append("static ");
+            }
+
+            if(field.isFinalField()) {
+                fieldsDefinitions.append("final ");
+            }
+
+            fieldsDefinitions.append(field.getFieldName()).append(" ");
+            fieldsDefinitions.append(JasminUtils.translateType(ollirClass, field.getFieldType()));
+            fieldsDefinitions.append("\n");
+        }
 
         return fieldsDefinitions.toString();
     }
