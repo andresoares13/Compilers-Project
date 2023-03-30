@@ -2,6 +2,7 @@ package pt.up.fe.comp2023.backend;
 
 import org.specs.comp.ollir.ClassUnit;
 import org.specs.comp.ollir.Field;
+import org.specs.comp.ollir.Method;
 import pt.up.fe.comp.jmm.jasmin.JasminBackend;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
@@ -89,7 +90,13 @@ public class JmmBackend implements JasminBackend {
 
     private String getMethodsDir(ClassUnit ollirClass) {
         StringBuilder methodsDefinitions = new StringBuilder();
+        MethodDefinitionGenerator mdg = new MethodDefinitionGenerator();
 
+        for(Method method: ollirClass.getMethods()) {
+            mdg.setMethod(method);
+
+            methodsDefinitions.append(mdg.getMethodDefinition()).append("\n");
+        }
 
         return methodsDefinitions.toString();
     }

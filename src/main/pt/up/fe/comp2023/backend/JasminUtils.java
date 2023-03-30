@@ -29,7 +29,7 @@ public class JasminUtils {
             case BOOLEAN:
                 return "Z";
             case STRING:
-                return "Ljava/lang/string";
+                return "Ljava/lang/String;";
             case THIS:
                 return "this";
             case VOID:
