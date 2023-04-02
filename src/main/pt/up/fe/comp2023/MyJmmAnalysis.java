@@ -15,7 +15,7 @@ public class MyJmmAnalysis implements JmmAnalysis {
     @Override
     public JmmSemanticsResult semanticAnalysis(JmmParserResult jmmParserResult) {
         SymbolTableStore table = new SymbolTableStore(jmmParserResult);
-        table.printImports();
+        table.print();
         List<Report> reports = new ArrayList<>();
         Map<String, String> config = new HashMap<>();
         JmmSemanticsResult result = new JmmSemanticsResult(jmmParserResult.getRootNode(),table,reports,config);

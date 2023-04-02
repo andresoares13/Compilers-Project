@@ -47,7 +47,9 @@ public class Launcher {
 
         // ... add remaining stages
 
-        SymbolTableStore table = new SymbolTableStore(parserResult);
+        //SymbolTableStore table = new SymbolTableStore(parserResult);
+        MyJmmAnalysis analysis = new MyJmmAnalysis();
+        analysis.semanticAnalysis(parserResult);
 
         //table.printImports();
         //table.printVars();
