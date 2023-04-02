@@ -67,8 +67,7 @@ expression
     | '!' expression #NegationOp
     | '(' expression ')' #ParOp
     | value=INTEGER #Integer
-    | 'true' #True
-    | 'false' #False
+    | value=('true' | 'false') #Bool
     | value=ID #Identifier
     | 'this' #This
     ;

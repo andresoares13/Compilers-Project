@@ -4,20 +4,32 @@ import pt.up.fe.comp.jmm.analysis.JmmAnalysis;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp.jmm.report.Report;
+import pt.up.fe.comp2023.analysers.IdentifierDeclarationAnalyser;
+import pt.up.fe.comp2023.analysers.OperandsAnalyser;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MyJmmAnalysis implements JmmAnalysis {
 
     @Override
     public JmmSemanticsResult semanticAnalysis(JmmParserResult jmmParserResult) {
         SymbolTableStore table = new SymbolTableStore(jmmParserResult);
-        table.print();
+        //table.print();
         List<Report> reports = new ArrayList<>();
+        List<SemanticAnalyser> analysers = new ArrayList<>();
+
+        analysers.add(new IdentifierDeclarationAnalyser(table,jmmParserResult));
+        analysers.add(new OperandsAnalyser(table, jmmParserResult));
+
+
+
         Map<String, String> config = new HashMap<>();
+
+        for(SemanticAnalyser analyser : analysers) {
+            reports.addAll(analyser.getReports());
+        }
+        reports.removeAll(Collections.singleton(null));
+
         JmmSemanticsResult result = new JmmSemanticsResult(jmmParserResult.getRootNode(),table,reports,config);
         return result;
     }
