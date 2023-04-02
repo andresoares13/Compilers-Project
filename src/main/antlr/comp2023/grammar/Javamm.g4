@@ -46,29 +46,29 @@ type locals[boolean isArray=false]
 
 
 statement
-    : 'if' '(' expression ')' statement 'else' statement #IfElseStatement
+    : '{' (statement)* '}' #Brackets
+    | 'if' '(' expression ')' statement 'else' statement #IfElseStatement
     | 'while' '(' expression ')' statement #WhileStatement
-    | '{' (statement)* '}' #Brackets
-    | ID '=' expression ';' #VarDeclareStatement
     | expression ';' #SemiColon
+    | ID '=' expression ';' #VarDeclareStatement
     | ID '[' expression ']' '=' expression ';' #ArrayAccess
     ;
 
 expression
-    : '(' expression ')' #ParOp
+    : expression op='&&' expression #BinaryOp
+    | expression op='<' expression #BinaryOp
+    | expression op=('+' | '-') expression #BinaryOp
+    | expression op=('*' | '/') expression #BinaryOp
+    | expression '[' expression ']' #IndexOp
+    | expression '.' 'length' #LengthOp
     | expression '.' ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
     | 'new' 'int' '[' expression ']' #NewArr
     | 'new' ID '(' ')' #NewFunc
     | '!' expression #NegationOp
-    | expression '.' 'length' #LengthOp
-    | expression '[' expression ']' #IndexOp
-    | expression op=('*' | '/') expression #BinaryOp
-    | expression op=('+' | '-') expression #BinaryOp
-    | expression op = '<' expression #BinaryOp
-    | expression op='&&' expression #BinaryOp
+    | '(' expression ')' #ParOp
     | value=INTEGER #Integer
-    | value=ID #Identifier
     | 'true' #True
     | 'false' #False
+    | value=ID #Identifier
     | 'this' #This
     ;
