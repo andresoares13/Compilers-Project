@@ -61,7 +61,7 @@ expression
     | expression op=('*' | '/') expression #BinaryOp
     | expression '[' expression ']' #IndexOp
     | expression '.' 'length' #LengthOp
-    | expression '.' ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
+    | expression '.' name=ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
     | 'new' 'int' '[' expression ']' #NewArr
     | 'new' name=ID '(' ')' #NewFunc
     | '!' expression #NegationOp

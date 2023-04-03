@@ -1,6 +1,6 @@
 import A;
 
-class IntPlusObject {
+class CallToMethodAssumedInImport extends A {
 
     public static void main(String[] args) {
 
@@ -8,10 +8,11 @@ class IntPlusObject {
 
     public int foo() {
         A a;
-        int[] a;
-        int b;
-        a[0] = 2;
+        a = new A();
 
-        return a;
+        // Assume bar() is in A
+        a.bar();
+
+        return 0;
     }
 }
