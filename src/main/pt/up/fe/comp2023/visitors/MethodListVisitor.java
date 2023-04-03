@@ -37,44 +37,59 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
         int line = 1;//Integer.valueOf(methodCall.get("line"));
         int col = 1;//Integer.valueOf(methodCall.get("col"));
 
-        boolean imported = false;
-        for (int i=0;i<symbolTable.getImports().size();i++){
-            if (symbolTable.getImports().get(i).equals(methodCall.get("name"))){
-                imported = true;
+
+        List<String> methods = symbolTable.getMethods();
+        boolean declared = false;
+
+        for (int i=0;i<methods.size();i++){
+            if (methods.get(i).equals(methodCall.get("name"))){
+                declared = true;
+
             }
+
+
         }
 
-        if (!imported){
-            String name;
-            boolean assumed = false;
+        if (!declared){
+            String name = "";
             Type type = new Type("", false);
-            if (methodCall.getJmmChild(0).getKind().equals("Identifier")){
-                name = methodCall.getJmmChild(0).get("value");
-                List<String> methods = symbolTable.getMethods();
+            for (int i=0;i<methods.size();i++){
+                List<Symbol> tempSymbolListPar = symbolTable.getParameters(methods.get(i));
+                List<Symbol> tempSymbolListVar = symbolTable.getLocalVariables(methods.get(i));
+                for (int k=0;k<tempSymbolListPar.size();k++){
 
-                for (int i=0;i<methods.size();i++){
-                    List<Symbol> tempSymbolListPar = symbolTable.getParameters(methods.get(i));
-                    List<Symbol> tempSymbolListVar = symbolTable.getLocalVariables(methods.get(i));
-                    for (int k=0;k<tempSymbolListPar.size();k++){
-
-                        if (tempSymbolListPar.get(k).getName().equals(name)){
-                            assumed = true;
-                            type = tempSymbolListPar.get(k).getType();
-                        }
+                    if (tempSymbolListPar.get(k).getName().equals(methodCall.getJmmChild(0).get("value"))){
+                        name=  tempSymbolListPar.get(k).getType().getName();
+                        type = tempSymbolListPar.get(k).getType();
                     }
-                    for (int k=0;k<tempSymbolListVar.size();k++){
+                }
+                for (int k=0;k<tempSymbolListVar.size();k++){
 
-                        if (tempSymbolListVar.get(k).getName().equals(name)){
-                            assumed = true;
-                            type = tempSymbolListVar.get(k).getType();
-                        }
+                    if (tempSymbolListVar.get(k).getName().equals(methodCall.getJmmChild(0).get("value"))){
+                        name=  tempSymbolListVar.get(k).getType().getName();
+                        type = tempSymbolListVar.get(k).getType();
                     }
                 }
             }
-            if (!assumed){
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Class not imported"));
+
+
+            boolean imported = false;
+
+            for (String import_: symbolTable.getImports()){
+                if (import_.equals(name)){
+                    imported = true;
+                }
+            }
+
+
+
+
+
+            if (!imported && (!symbolTable.getClassName().equals(name) || symbolTable.getSuper().equals(""))){
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Method Undeclared"));
                 return type;
             }
+
             else{
                 return type;
             }
@@ -82,31 +97,15 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
         }
 
+
+
+
+
         Type type = this.symbolTable.getReturnType(methodCall.get("name"));
 
 
 
-        if (type == null && symbolTable.getSuper() != null || type == null && !symbolTable.getImports().isEmpty()) {
-            switch (methodCall.getJmmParent().getKind()) {
-                case "Statement":{
-                    JmmNode child = methodCall.getJmmParent().getJmmChild(0);
-                    VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
-                    type = variableSemanticVisitor.visit(child);
-                    break;
-                }
-                default:{
-                    type = visit(methodCall.getJmmChild(0));
-                    break;
-                }
-            }
-            return type;
-        } else if (type == null && methodCall.getJmmChild(0).getKind().equals("This")) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Method Undeclared"));
-            return new Type("", false);
-        } else if(type == null && symbolTable.getSuper() == null && symbolTable.getImports().isEmpty()) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Method Undeclared"));
-            return new Type("", false);
-        }
+
 
         for(int i = 0; i < methodCall.getJmmChild(1).getChildren().size(); i++){
             Type argType = new Type("", false);

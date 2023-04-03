@@ -1,16 +1,13 @@
-import A;
-
-class CallToMethodAssumedInImport extends A {
+class CallToUndeclaredMethod {
 
     public static void main(String[] args) {
 
     }
 
     public int foo() {
-        A a;
-        a = new A();
+        CallToUndeclaredMethod a;
+        a = new CallToUndeclaredMethod();
 
-        // Assume bar() is in A
         a.bar();
 
         return 0;
