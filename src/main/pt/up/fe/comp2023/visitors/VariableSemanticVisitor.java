@@ -35,8 +35,8 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
     private Type visitNotExpr(JmmNode visitNotExpr, Integer dummy) {
         Type r = new Type("", false);
 
-        int line = Integer.valueOf(visitNotExpr.get("line"));
-        int col = Integer.valueOf(visitNotExpr.get("col"));
+        int line = 1;//Integer.valueOf(visitNotExpr.get("line"));
+        int col = 1;//Integer.valueOf(visitNotExpr.get("col"));
 
         switch(visitNotExpr.getJmmChild(0).getKind()) {
             case "BinaryOp": {
@@ -76,7 +76,7 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
     }
 
     private Type visitNewClassAttribution(JmmNode newClassAttribution, Integer dummy) {
-        return new Type(newClassAttribution.getJmmChild(0).get("name"), false);
+        return new Type(newClassAttribution.get("name"), false);
     }
 
     private Type visitNewIntArrVarAttribution(JmmNode newIntArrVarAttribution, Integer dummy) {
@@ -93,8 +93,8 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
                 break;
             }
         }
-        Integer line = Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("line"));
-        Integer col = Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("col"));
+        Integer line = 1;//Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("line"));
+        Integer col = 1;//Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("col"));
         if (varType.getName() != "int") {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,
                     "New array inititalization needs int as size"));
@@ -103,42 +103,29 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
     }
 
     private Type visitId(JmmNode id, Integer dummy) {
-        String name = id.get("name");
-        int line = Integer.valueOf(id.get("line"));
-        int col = Integer.valueOf(id.get("col"));
-        JmmNode parent = id.getJmmParent();
-        while(!parent.getKind().equals("MethodDeclaration") && !parent.getKind().equals("ImportDeclaration")) {
-            parent = parent.getJmmParent();
+        String name = id.get("value");
+        int line = 1;//Integer.valueOf(id.get("line"));
+        int col = 1;//Integer.valueOf(id.get("col"));
+
+        List<String> methods = symbolTable.getMethods();
+        for (int i=0;i<methods.size();i++){
+            List<Symbol> tempSymbolListPar = symbolTable.getParameters(methods.get(i));
+            List<Symbol> tempSymbolListVar = symbolTable.getLocalVariables(methods.get(i));
+            for (int k=0;k<tempSymbolListPar.size();k++){
+
+                if (tempSymbolListPar.get(k).getName().equals(name)){
+                    return  tempSymbolListPar.get(k).getType();
+                }
+            }
+            for (int k=0;k<tempSymbolListVar.size();k++){
+
+                if (tempSymbolListVar.get(k).getName().equals(name)){
+                    return  tempSymbolListVar.get(k).getType();
+                }
+            }
         }
 
-        if(!parent.getKind().equals("ImportDeclaration")) {
-            String method = parent.get("name");
-            List<Symbol> locals = symbolTable.getLocalVariables(method);
-            for(Symbol local : locals) {
-                if(local.getName().equals(name)) {
-                    return local.getType();
-                }
-            }
-            List<Symbol> params = symbolTable.getParameters(method);
-            for(Symbol param : params) {
-                if(param.getName().equals(name)) {
-                    return param.getType();
-                }
-            }
-            List<Symbol> fields = symbolTable.getFields();
-            for(Symbol field : fields) {
-                if(field.getName().equals(name)) {
-                    if (parent.get("name").equals("main")) {
-                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,
-                                "Variable " + name + " is a field and cannot be used in main method"));
-                    }
-                    return field.getType();
-                }
-            }
-            if((symbolTable.getImports() == null || !symbolTable.getImports().contains(name)) && (symbolTable.getSuper() == null || !symbolTable.getSuper().equals(name)) && !symbolTable.getClassName().equals(name)) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error: variable " + name + " not declared"));
-            }
-        }
+
         return new Type("none", false);
     }
 

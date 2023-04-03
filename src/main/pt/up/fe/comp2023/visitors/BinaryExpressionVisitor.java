@@ -45,6 +45,13 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
             case "NotExpr": {
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 leftOperand = variableSemanticVisitor.visit(node.getJmmChild(0), 0);
+
+                break;
+            }
+            case "LengthMethod":
+            case "Indexing":{
+                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                leftOperand = indexingSemanticVisitor.visit(node.getJmmChild(0), 0);
                 break;
             }
 
@@ -65,6 +72,13 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
             case "This":{
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 rightOperand = variableSemanticVisitor.visit(node.getJmmChild(1), 0);
+
+                break;
+            }
+            case "LengthMethod":
+            case "Indexing":{
+                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                rightOperand = indexingSemanticVisitor.visit(node.getJmmChild(0), 0);
                 break;
             }
 

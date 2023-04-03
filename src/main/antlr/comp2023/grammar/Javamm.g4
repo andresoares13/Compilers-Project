@@ -50,8 +50,8 @@ statement
     | 'if' '(' expression ')' statement 'else' statement #IfElseStatement
     | 'while' '(' expression ')' statement #WhileStatement
     | expression ';' #SemiColon
-    | ID '=' expression ';' #VarDeclareStatement
-    | ID '[' expression ']' '=' expression ';' #ArrayAccess
+    | name=ID '=' expression ';' #VarDeclareStatement
+    | name=ID '[' expression ']' '=' expression ';' #ArrayAccess
     ;
 
 expression
@@ -63,7 +63,7 @@ expression
     | expression '.' 'length' #LengthOp
     | expression '.' ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
     | 'new' 'int' '[' expression ']' #NewArr
-    | 'new' ID '(' ')' #NewFunc
+    | 'new' name=ID '(' ')' #NewFunc
     | '!' expression #NegationOp
     | '(' expression ')' #ParOp
     | value=INTEGER #Integer
