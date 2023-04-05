@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import pt.up.fe.comp.TestUtils;
+import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
@@ -49,7 +50,11 @@ public class Launcher {
 
         // ... add remaining stages
 
-        SymbolTableStore table = new SymbolTableStore(parserResult);
+        //SymbolTableStore table = new SymbolTableStore(parserResult);
+        MyJmmAnalysis analysis = new MyJmmAnalysis();
+        JmmSemanticsResult analysisResult = analysis.semanticAnalysis(parserResult);
+
+        TestUtils.noErrors(analysisResult.getReports());
 
         //table.printImports();
         //table.printVars();
