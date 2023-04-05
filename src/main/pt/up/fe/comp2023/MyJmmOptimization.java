@@ -27,8 +27,11 @@ public class MyJmmOptimization implements JmmOptimization {
         }
         codeBuilder.append('\n');
         codeBuilder.append(
-                st.getClassName() + " {\n" +
-                    "\t.constuct "+st.getClassName()+"().V {\n" +
+                st.getClassName() +(st.getSuper().equals("")?"":" extends "+st.getSuper())+ " {\n");
+        for(Symbol v:st.getFields()){
+            codeBuilder.append("\t.field public "+v.getName()+toOllirType(v.getType()) + ";\n");
+        }
+                codeBuilder.append("\t.construct "+st.getClassName()+"().V {\n" +
                         "\t\tinvokespecial(this, \"<init>\").V;\n" +
                     "\t}\n\n");
         for(String s :st.getMethods()){
@@ -50,12 +53,12 @@ public class MyJmmOptimization implements JmmOptimization {
             codeBuilder.append(" {\n");
             //method statements
             //TODO
-            codeBuilder.append("\t{\n");
+            codeBuilder.append("\t}\n");
         }
         codeBuilder.append("}\n");
 
         String ollirCode = codeBuilder.toString();
-        OllirResult result = new OllirResult(jmmSemanticsResult,ollirCode,reports);
+        OllirResult result = new OllirResult(ollirCode,jmmSemanticsResult.getConfig());
 
         return result;
     }
