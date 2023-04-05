@@ -1,7 +1,6 @@
 package pt.up.fe.comp2023.backend;
 
-import org.specs.comp.ollir.Element;
-import org.specs.comp.ollir.Method;
+import org.specs.comp.ollir.*;
 
 public class MethodDefinitionGenerator {
     private Method method;
@@ -10,7 +9,7 @@ public class MethodDefinitionGenerator {
         method = m;
     }
 
-    public Method getMethodDefinition() {
+    public String getMethodDefinition() {
         StringBuilder methodDefinition = new StringBuilder();
 
         if(method.isConstructMethod()) {
@@ -20,14 +19,32 @@ public class MethodDefinitionGenerator {
         methodDefinition.append(getMethodHeader());
 
         StringBuilder instructions = new StringBuilder();
+        InstructionTranslator instructionTranslator = new InstructionTranslator();
+        boolean hasReturn = false;
 
-        // .limit locals
-        //
-        // .limit stack
+        for(Instruction instruction: method.getInstructions()) {
+            if(instruction.getInstType() == InstructionType.RETURN) {
+                hasReturn = true;
+            }
 
-        //instructions
+            instructions.append(instructionTranslator.translateInstruction(instruction, method)).append("\n");
+        }
 
-        return method;
+
+        // .limit stack 99 (for now)
+        methodDefinition.append("\t.limit stack 99").append("\n");
+        // .limit locals 99 (for now)
+        methodDefinition.append("\t.limit locals 99").append("\n");
+
+        methodDefinition.append(instructions);
+
+        if(!hasReturn) {
+            methodDefinition.append("\treturn\n");
+        }
+
+        methodDefinition.append(".end method\n");
+
+        return methodDefinition.toString();
     }
 
     private String getMethodHeader() {
@@ -62,5 +79,12 @@ public class MethodDefinitionGenerator {
         descriptor.append(")").append(JasminUtils.translateType(method.getOllirClass(), method.getReturnType()));
 
         return descriptor.toString();
+    }
+
+    private int getLocalsLimit(){
+        if(method == null)
+            return 0;
+
+        return 99;
     }
 }
