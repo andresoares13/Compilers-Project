@@ -4,6 +4,7 @@ import org.specs.comp.ollir.*;
 
 public class InstructionTranslator {
     private int stackCounter = 1;
+    private int indentation = 1;
 
     public String translateInstruction(Instruction instruction, Method method) {
         StringBuilder instructionTranslated = new StringBuilder();
@@ -34,7 +35,7 @@ public class InstructionTranslator {
 
     // GOTO
     public String translateInstruction(GotoInstruction instruction, Method method) {
-        return "";
+        return getIndentation() + "goto " + instruction.getLabel();
     }
 
     // NOPER
@@ -49,12 +50,37 @@ public class InstructionTranslator {
 
     // BRANCH
     public String translateInstruction(CondBranchInstruction instruction, Method method) {
-        return "";
+        return translateInstruction(instruction.getCondition(), method) + "\n" +
+                getIndentation() + "ifne " + instruction.getLabel();
     }
 
     // RETURN
     public String translateInstruction(ReturnInstruction instruction, Method method) {
-        return "";
+        StringBuilder jasminInstruction = new StringBuilder();
+        ElementType returnType = instruction.getReturnType().getTypeOfElement();
+
+        switch (returnType) {
+            case BOOLEAN:
+            case INT32:
+            case OBJECTREF:
+            case CLASS:
+            case STRING:
+            case ARRAYREF:
+
+                jasminInstruction.append(getIndentation());
+
+                if(returnType == ElementType.BOOLEAN || returnType == ElementType.INT32) {
+                    jasminInstruction.append("ireturn");
+                } else {
+                    jasminInstruction.append("areturn");
+                }
+                break;
+            case VOID:
+                jasminInstruction.append(getIndentation()).append("return");
+            default:
+                break;
+        }
+        return jasminInstruction.toString();
     }
 
     // GETFIELD
@@ -75,6 +101,10 @@ public class InstructionTranslator {
     // BINARYOPER
     public String translateInstruction(BinaryOpInstruction instruction, Method method) {
         return "";
+    }
+
+    private String getIndentation() {
+        return "\t".repeat(indentation);
     }
 
     public int getStackCounter() {
