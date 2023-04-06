@@ -32,7 +32,73 @@ public class InstructionTranslator {
 
     // CALL
     public String translateInstruction(CallInstruction instruction, Method method) {
-        return "";
+        StringBuilder jasminInstruction = new StringBuilder();
+        StringBuilder parameters = new StringBuilder();
+        CallType callType = instruction.getInvocationType();
+        Operand caller = (Operand) instruction.getFirstArg();
+        LiteralElement methodName = (LiteralElement) instruction.getSecondArg();
+
+        switch (callType) {
+            case invokestatic:
+            case invokevirtual:
+                if(callType == CallType.invokevirtual) { // invokestatic doesn't have a caller it's io
+                    jasminInstruction.append(getCorrespondingLoad(caller, method)).append("\n");
+                }
+
+                for(Element element: instruction.getListOfOperands()) {
+                    jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
+                    parameters.append(JasminUtils.translateType(method.getOllirClass(), element.getType()));
+                }
+
+                jasminInstruction.append(getIndentation());
+
+                if(callType == CallType.invokestatic){
+                    jasminInstruction.append("invokestatic ").append(caller.getName());
+                } else {
+                    jasminInstruction.append("invokevirtual ");
+                    jasminInstruction.append(JasminUtils.getFullClassName(method.getOllirClass(), caller.getName()));
+                }
+
+                jasminInstruction.append("/").append(JasminUtils.trimLiteral(methodName.getLiteral()));
+                jasminInstruction.append("(").append(parameters).append(")");
+                jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
+                break;
+            case invokespecial:
+                if(method.isConstructMethod()) {
+                    if(caller.getName().equals("this")) {
+                        jasminInstruction.append(getCorrespondingLoad(caller, method)).append("\n");
+                    }
+                }
+
+                for(Element element: instruction.getListOfOperands()) {
+                    jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
+                    parameters.append(JasminUtils.translateType(method.getOllirClass(), element.getType()));
+                }
+
+                jasminInstruction.append(getIndentation()).append("invokespecial ");
+
+                if(method.isConstructMethod()) {
+                    if(caller.getName().equals("this")) {
+                        jasminInstruction.append(method.getOllirClass().getSuperClass());
+                    }
+                } else {
+                    jasminInstruction.append(JasminUtils.getFullClassName(method.getOllirClass(), caller.getName()));
+                }
+
+                jasminInstruction.append("/").append(JasminUtils.trimLiteral(methodName.getLiteral()));
+                jasminInstruction.append("(").append(parameters).append(")");
+                jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
+                break;
+            case invokeinterface:
+            case ldc:
+            case NEW:
+            case arraylength:
+            default:
+                break;
+        }
+
+        jasminInstruction.append("\n");
+        return jasminInstruction.toString();
     }
 
     // GOTO
