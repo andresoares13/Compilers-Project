@@ -23,6 +23,7 @@ public class MyJmmAnalysis implements JmmAnalysis {
         analysers.add(new AttributionAnalyser(table,jmmParserResult));
         analysers.add(new OperandsAnalyser(table, jmmParserResult));
         analysers.add(new MethodAnalyser(table,jmmParserResult));
+        analysers.add(new ConditionalStatementsAnalyser(table, jmmParserResult));
 
 
 
