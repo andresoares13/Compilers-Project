@@ -42,12 +42,34 @@ public class InstructionTranslator {
 
     // NOPER
     public String translateInstruction(SingleOpInstruction instruction, Method method) {
-        return getCorrespondingLoad(instruction.getSingleOperand(), method);
+        return "";
     }
 
     // ASSIGN
     public String translateInstruction(AssignInstruction instruction, Method method) {
-        return "";
+        Element dest = instruction.getDest();
+
+        if (dest.isLiteral()) {
+            return "";
+        }
+
+        Instruction rhs = instruction.getRhs();
+
+        if (dest instanceof ArrayOperand) {
+            return getCorrespondingStore(dest, method) + "\n" + translateInstruction(rhs, method) + "\n" + getIndentation() + "iastore";
+        }
+
+        if (rhs.getInstType() == InstructionType.CALL) {
+            CallInstruction callInstruction = (CallInstruction) rhs;
+            if (callInstruction.getInvocationType() == CallType.NEW) {
+                ElementType elementType = callInstruction.getFirstArg().getType().getTypeOfElement();
+                if (elementType != ElementType.ARRAYREF) {
+                    return translateInstruction(rhs, method);
+                }
+            }
+        }
+
+        return translateInstruction(rhs, method) + "\n" + getCorrespondingStore(dest, method);
     }
 
     // BRANCH
@@ -69,7 +91,7 @@ public class InstructionTranslator {
             case STRING:
             case ARRAYREF:
                 // why this line???
-                //jasminInstruction.append(getCorrespondingLoad(instruction.getOperand(), method)).append("\n");
+                jasminInstruction.append(getCorrespondingLoad(instruction.getOperand(), method)).append("\n");
 
                 jasminInstruction.append(getIndentation());
 
@@ -99,12 +121,66 @@ public class InstructionTranslator {
 
     // UNARYOPER
     public String translateInstruction(UnaryOpInstruction instruction, Method method) {
-        return "";
+        StringBuilder jasminInstruction = new StringBuilder();
+        Operation operation = instruction.getOperation();
+        OperationType operationType = operation.getOpType();
+        Element element = instruction.getOperand();
+
+        jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
+
+        switch (operationType) {
+            case NOT -> jasminInstruction.append("not\n");
+            case NOTB -> jasminInstruction.append("notb\n");
+            default -> {
+            }
+        }
+
+        return jasminInstruction.toString();
     }
 
     // BINARYOPER
     public String translateInstruction(BinaryOpInstruction instruction, Method method) {
-        return "";
+        StringBuilder jasminInstruction = new StringBuilder();
+        Operation operation = instruction.getOperation();
+        OperationType operationType = operation.getOpType();
+
+        Element leftElement = instruction.getLeftOperand();
+        Element rightElement = instruction.getRightOperand();
+
+        jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+        jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+        jasminInstruction.append(getIndentation());
+
+        switch (operationType) {
+            case ADD:
+                jasminInstruction.append("iadd");
+                break;
+            case SUB:
+                jasminInstruction.append("isub");
+                break;
+            case MUL:
+                jasminInstruction.append("imul");
+                break;
+            case DIV:
+                jasminInstruction.append("idiv");
+                break;
+            case LTH:
+                // todo
+                break;
+            case AND, ANDB:
+                jasminInstruction.append("iand");
+                break;
+            case OR, ORB:
+                jasminInstruction.append("ior");
+                break;
+            case EQ:
+                // todo
+                break;
+            default:
+                // more to implement
+                break;
+        }
+        return jasminInstruction.toString();
     }
 
     private String getCorrespondingLoad(Element element, Method ancestorMethod) {
@@ -190,7 +266,6 @@ public class InstructionTranslator {
 
             switch (operand.getType().getTypeOfElement()) {
                 case INT32, BOOLEAN -> {
-                    // why this if??
                     if (element instanceof ArrayOperand) {
                         ArrayOperand arrayOperand = (ArrayOperand) operand;
                         StringBuilder jasminInstruction = new StringBuilder();

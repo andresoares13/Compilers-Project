@@ -15,7 +15,7 @@ public class JasminTest {
 
     @Test
     public void ollirToJasminBasic() {
-        testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/OllirToJasminBasic.ollir");
+        testOllirToJasmin("pt/up/fe/comp/cp2/apps/example_ollir/Simple.ollir");
     }
 
     @Test
