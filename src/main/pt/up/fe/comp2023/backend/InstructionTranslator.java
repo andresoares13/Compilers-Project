@@ -42,7 +42,7 @@ public class InstructionTranslator {
 
     // NOPER
     public String translateInstruction(SingleOpInstruction instruction, Method method) {
-        return "";
+        return getIndentation() + instruction.getSingleOperand().toString() + "\n";
     }
 
     // ASSIGN
@@ -74,23 +74,28 @@ public class InstructionTranslator {
 
     // BRANCH
     public String translateInstruction(CondBranchInstruction instruction, Method method) {
-        return translateInstruction(instruction.getCondition(), method) + "\n" +
-                getIndentation() + "ifne " + instruction.getLabel();
+        StringBuilder jasminInstruction = new StringBuilder();
+
+        jasminInstruction.append(translateInstruction(instruction.getCondition(), method)).append("\n");
+        // how to get the others operators??
+        jasminInstruction.append(getIndentation()).append("ifne").append("\n");
+
+        return jasminInstruction.toString();
     }
 
     // RETURN
     public String translateInstruction(ReturnInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
-        ElementType returnType = instruction.getReturnType().getTypeOfElement();
+        ElementType returnType = instruction.getElementType();
 
         switch (returnType) {
             case BOOLEAN:
             case INT32:
             case OBJECTREF:
             case CLASS:
+            case THIS:
             case STRING:
             case ARRAYREF:
-                // why this line???
                 jasminInstruction.append(getCorrespondingLoad(instruction.getOperand(), method)).append("\n");
 
                 jasminInstruction.append(getIndentation());
@@ -183,7 +188,7 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    private String getCorrespondingLoad(Element element, Method ancestorMethod) {
+    private String getCorrespondingLoad(Element element, Method method) {
         //stackCounter++;
         if (element.isLiteral()) {
             LiteralElement literalElement = (LiteralElement) element;
@@ -215,7 +220,7 @@ public class InstructionTranslator {
         } else {
             Operand operand = (Operand) element;
 
-            Descriptor operandDescriptor = ancestorMethod.getVarTable().get(operand.getName());
+            Descriptor operandDescriptor = method.getVarTable().get(operand.getName());
             if (operandDescriptor.getVirtualReg() < 0) {
                 return "";
             }
@@ -238,7 +243,7 @@ public class InstructionTranslator {
                         ArrayList<Element> indexes = arrayOperand.getIndexOperands();
                         Element index = indexes.get(0);
 
-                        jasminInstruction.append(getCorrespondingLoad(index, ancestorMethod)).append("\n");
+                        jasminInstruction.append(getCorrespondingLoad(index, method)).append("\n");
                         jasminInstruction.append(getIndentation()).append("iaload");
                     }
                     return jasminInstruction.toString();
@@ -254,13 +259,13 @@ public class InstructionTranslator {
         }
     }
 
-    private String getCorrespondingStore(Element element, Method ancestorMethod) {
+    private String getCorrespondingStore(Element element, Method method) {
         if (element.isLiteral()) {
             return "";
         } else {
             Operand operand = (Operand) element;
 
-            Descriptor operandDescriptor = ancestorMethod.getVarTable().get(operand.getName());
+            Descriptor operandDescriptor = method.getVarTable().get(operand.getName());
 
             String spacer = operandDescriptor.getVirtualReg() < 4 ? "_" : " ";
 
@@ -274,7 +279,7 @@ public class InstructionTranslator {
                         ArrayList<Element> indexes = arrayOperand.getIndexOperands();
                         Element index = indexes.get(0);
 
-                        jasminInstruction.append(getCorrespondingLoad(index, ancestorMethod));
+                        jasminInstruction.append(getCorrespondingLoad(index, method));
                         return jasminInstruction.toString();
                     }
                     return getIndentation() + "istore" + spacer + operandDescriptor.getVirtualReg();
@@ -291,7 +296,7 @@ public class InstructionTranslator {
                         ArrayList<Element> indexes = arrayOperand.getIndexOperands();
                         Element index = indexes.get(0);
 
-                        jasminInstruction.append(getCorrespondingLoad(index, ancestorMethod)).append("\n");
+                        jasminInstruction.append(getCorrespondingLoad(index, method)).append("\n");
                     } else {
                         jasminInstruction.append(getIndentation()).append("astore").append(spacer).append(operandDescriptor.getVirtualReg());
                     }
