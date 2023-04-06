@@ -64,7 +64,7 @@ public class MethodDefinitionGenerator {
             header.append("static ");
         }
 
-        header.append(method.getMethodName()).append(getMethodDescriptor());
+        header.append(method.getMethodName()).append(getMethodDescriptor()).append("\n");
 
         return header.toString();
     }

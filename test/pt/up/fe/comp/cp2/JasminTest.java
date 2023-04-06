@@ -2,7 +2,9 @@ package pt.up.fe.comp.cp2;
 
 import org.junit.Test;
 import pt.up.fe.comp.TestUtils;
+import pt.up.fe.comp.jmm.jasmin.JasminResult;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
+import pt.up.fe.comp2023.backend.JmmBackend;
 import pt.up.fe.specs.util.SpecsCheck;
 import pt.up.fe.specs.util.SpecsIo;
 import utils.ProjectTestUtils;
@@ -49,7 +51,9 @@ public class JasminTest {
 
         var ollirResult = new OllirResult(SpecsIo.getResource(resource), Collections.emptyMap());
 
-        var result = TestUtils.backend(ollirResult);
+        //var result = TestUtils.backend(ollirResult);
+        JmmBackend backend = new JmmBackend();
+        var result = backend.toJasmin(ollirResult);
 
         ProjectTestUtils.runJasmin(result, null);
     }

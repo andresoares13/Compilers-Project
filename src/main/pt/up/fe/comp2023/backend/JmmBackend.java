@@ -26,6 +26,7 @@ public class JmmBackend implements JasminBackend {
         // getMethods
         jasminCode.append(getMethodsDir(ollirClass)).append("\n");
 
+        System.out.println(jasminCode.toString());
 
         return new JasminResult(ollirResult, jasminCode.toString(), Collections.emptyList());
     }

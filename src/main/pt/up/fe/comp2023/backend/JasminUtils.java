@@ -54,4 +54,11 @@ public class JasminUtils {
 
         return className;
     }
+
+    public static String trimLiteral(String literal) {
+        if (literal.charAt(0) != '"') {
+            return literal;
+        }
+        return literal.length() == 1 ? literal : literal.substring(1, literal.length() - 1);
+    }
 }
