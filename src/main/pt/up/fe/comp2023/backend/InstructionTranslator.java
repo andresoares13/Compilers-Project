@@ -210,12 +210,64 @@ public class InstructionTranslator {
 
     // GETFIELD
     public String translateInstruction(GetFieldInstruction instruction, Method method) {
-        return "";
+        StringBuilder jasminInstruction = new StringBuilder();
+        Element dest = instruction.getFirstOperand();
+        Element field = instruction.getSecondOperand();
+
+        if(dest.isLiteral() || field.isLiteral()) {
+            return "";
+        }
+
+        switch (dest.getType().getTypeOfElement()) {
+            case OBJECTREF, THIS -> {
+                jasminInstruction.append(getCorrespondingLoad(dest, method)).append("\n");
+                jasminInstruction.append(getIndentation()).append("getfield ");
+            }
+            case CLASS -> {
+                jasminInstruction.append(getIndentation()).append("getstatic ");
+            }
+            default -> {}
+        }
+
+        ClassType classType = (ClassType) dest.getType();
+
+        jasminInstruction.append(classType.getName()).append("/");
+        jasminInstruction.append(((Operand) field).getName()).append(" ");
+        jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), field.getType()));
+
+        return jasminInstruction.toString();
     }
 
     // PUTFIELD
     public String translateInstruction(PutFieldInstruction instruction, Method method) {
-        return "";
+        StringBuilder jasminInstruction = new StringBuilder();
+        Element dest = instruction.getFirstOperand();
+        Element field = instruction.getSecondOperand();
+        Element newValue = instruction.getThirdOperand();
+
+        if(dest.isLiteral() || field.isLiteral()) {
+            return "";
+        }
+
+        switch (dest.getType().getTypeOfElement()) {
+            case OBJECTREF, THIS -> {
+                jasminInstruction.append(getCorrespondingLoad(dest, method)).append("\n");
+                jasminInstruction.append(getCorrespondingLoad(newValue, method)).append("\n");
+                jasminInstruction.append(getIndentation()).append("putfield ");
+            }
+            case CLASS -> {
+                jasminInstruction.append(getIndentation()).append("putstatic ");
+            }
+            default -> {}
+        }
+
+        ClassType classType = (ClassType) dest.getType();
+
+        jasminInstruction.append(classType.getName()).append("/");
+        jasminInstruction.append(((Operand) field).getName()).append(" ");
+        jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), field.getType()));
+
+        return jasminInstruction.toString();
     }
 
     // UNARYOPER (not finished -> questions)

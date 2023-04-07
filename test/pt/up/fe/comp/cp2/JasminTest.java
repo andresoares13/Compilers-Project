@@ -15,7 +15,7 @@ public class JasminTest {
 
     @Test
     public void ollirToJasminBasic() {
-        testOllirToJasmin("pt/up/fe/comp/cp2/apps/example_ollir/Simple.ollir");
+        testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/OllirToJasminBasic.ollir");
     }
 
     @Test
@@ -31,6 +31,11 @@ public class JasminTest {
     @Test
     public void ollirToJasminFields() {
         testOllirToJasmin("pt/up/fe/comp/cp2/jasmin/OllirToJasminFields.ollir");
+    }
+
+    @Test
+    public void ollirToJasminSimple() {
+        testOllirToJasmin("pt/up/fe/comp/cp2/apps/example_ollir/Simple.ollir");
     }
 
     public static void testOllirToJasmin(String resource, String expectedOutput) {
