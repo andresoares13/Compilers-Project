@@ -30,7 +30,7 @@ public class InstructionTranslator {
         return instructionTranslated.toString();
     }
 
-    // CALL
+    // CALL (not finished -> probably needs some fixes)
     public String translateInstruction(CallInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         StringBuilder parameters = new StringBuilder();
@@ -41,7 +41,13 @@ public class InstructionTranslator {
         switch (callType) {
             case invokestatic:
             case invokevirtual:
+            case invokespecial:
                 if(callType == CallType.invokevirtual) { // invokestatic doesn't have a caller it's io
+                    jasminInstruction.append(getCorrespondingLoad(caller, method)).append("\n");
+                } else if(callType == CallType.invokespecial) {
+                    if(!caller.getName().equals("this")){
+                        jasminInstruction.append(getCorrespondingStore(caller, method)).append("\n");
+                    }
                     jasminInstruction.append(getCorrespondingLoad(caller, method)).append("\n");
                 }
 
@@ -54,35 +60,25 @@ public class InstructionTranslator {
 
                 if(callType == CallType.invokestatic){
                     jasminInstruction.append("invokestatic ").append(caller.getName());
-                } else {
+                } else if(callType == CallType.invokevirtual) {
                     jasminInstruction.append("invokevirtual ");
-                    jasminInstruction.append(JasminUtils.getFullClassName(method.getOllirClass(), caller.getName()));
-                }
-
-                jasminInstruction.append("/").append(JasminUtils.trimLiteral(methodName.getLiteral()));
-                jasminInstruction.append("(").append(parameters).append(")");
-                jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
-                break;
-            case invokespecial:
-                if(method.isConstructMethod()) {
                     if(caller.getName().equals("this")) {
-                        jasminInstruction.append(getCorrespondingLoad(caller, method)).append("\n");
-                    }
-                }
-
-                for(Element element: instruction.getListOfOperands()) {
-                    jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
-                    parameters.append(JasminUtils.translateType(method.getOllirClass(), element.getType()));
-                }
-
-                jasminInstruction.append(getIndentation()).append("invokespecial ");
-
-                if(method.isConstructMethod()) {
-                    if(caller.getName().equals("this")) {
-                        jasminInstruction.append(method.getOllirClass().getSuperClass());
+                        jasminInstruction.append(method.getOllirClass().getClassName());
+                    } else {
+                        ClassType classType = (ClassType) instruction.getFirstArg().getType();
+                        jasminInstruction.append(JasminUtils.getFullClassName(method.getOllirClass(), classType.getName()));
                     }
                 } else {
-                    jasminInstruction.append(JasminUtils.getFullClassName(method.getOllirClass(), caller.getName()));
+                    jasminInstruction.append("invokespecial ");
+
+                    if(method.isConstructMethod()) {
+                        if(caller.getName().equals("this")) {
+                            jasminInstruction.append(method.getOllirClass().getSuperClass());
+                        }
+                    } else {
+                        ClassType classType = (ClassType) instruction.getFirstArg().getType();
+                        jasminInstruction.append(JasminUtils.getFullClassName(method.getOllirClass(), classType.getName()));
+                    }
                 }
 
                 jasminInstruction.append("/").append(JasminUtils.trimLiteral(methodName.getLiteral()));
@@ -90,14 +86,45 @@ public class InstructionTranslator {
                 jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
                 break;
             case invokeinterface:
+                for(Element element: instruction.getListOfOperands()) {
+                    jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
+                    parameters.append(JasminUtils.translateType(method.getOllirClass(), element.getType()));
+                }
+
+                jasminInstruction.append(getIndentation()).append("invokeinterface ");
+                ClassType classType = (ClassType) instruction.getFirstArg().getType();
+                jasminInstruction.append(JasminUtils.getFullClassName(method.getOllirClass(), classType.getName()));
+                jasminInstruction.append("/").append(JasminUtils.trimLiteral(methodName.getLiteral()));
+                jasminInstruction.append("(").append(parameters).append(")");
+                jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
             case ldc:
+                LiteralElement literalElement = (LiteralElement) instruction.getFirstArg();
+                jasminInstruction.append(getIndentation()).append("ldc ");
+                jasminInstruction.append(JasminUtils.trimLiteral(literalElement.getLiteral()));
+                break;
             case NEW:
+                ElementType elementType = caller.getType().getTypeOfElement();
+                if(elementType == ElementType.CLASS || elementType == ElementType.OBJECTREF) {
+                    jasminInstruction.append(getIndentation()).append("new ").append(caller.getName()).append("\n");
+                    jasminInstruction.append(getIndentation()).append("dup");
+                } else if (elementType == ElementType.ARRAYREF) { // array does not need a dup
+                    ArrayList<Element> operands = instruction.getListOfOperands();
+                    if (operands.size() < 1) {
+                        return "";
+                    }
+
+                    jasminInstruction.append(getCorrespondingLoad(operands.get(0), method)).append("\n");
+                    jasminInstruction.append(getIndentation()).append("newarray int");
+                }
+                break;
             case arraylength:
+                jasminInstruction.append(getCorrespondingLoad(caller, method)).append("\n");
+                jasminInstruction.append(getIndentation()).append("arraylength");
+                break;
             default:
                 break;
         }
 
-        jasminInstruction.append("\n");
         return jasminInstruction.toString();
     }
 
@@ -106,9 +133,10 @@ public class InstructionTranslator {
         return getIndentation() + "goto " + instruction.getLabel();
     }
 
-    // NOPER
+    // NOPER (not finished -> questions)
     public String translateInstruction(SingleOpInstruction instruction, Method method) {
-        return getIndentation() + instruction.getSingleOperand().toString() + "\n";
+        // what about the dup/pop/swap/etc.? Where should they be handled?
+        return getCorrespondingLoad(instruction.getSingleOperand(), method);
     }
 
     // ASSIGN
@@ -138,7 +166,7 @@ public class InstructionTranslator {
         return translateInstruction(rhs, method) + "\n" + getCorrespondingStore(dest, method);
     }
 
-    // BRANCH
+    // BRANCH (not finished -> questions)
     public String translateInstruction(CondBranchInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
 
@@ -190,7 +218,7 @@ public class InstructionTranslator {
         return "";
     }
 
-    // UNARYOPER
+    // UNARYOPER (not finished -> questions)
     public String translateInstruction(UnaryOpInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
@@ -199,7 +227,7 @@ public class InstructionTranslator {
 
         jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
 
-        switch (operationType) {
+        switch (operationType) { // what about the rest? Are they important?
             case NOT -> jasminInstruction.append("not\n");
             case NOTB -> jasminInstruction.append("notb\n");
             default -> {
@@ -209,7 +237,7 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    // BINARYOPER
+    // BINARYOPER (not finished -> questions)
     public String translateInstruction(BinaryOpInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();

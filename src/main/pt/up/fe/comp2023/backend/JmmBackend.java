@@ -20,13 +20,13 @@ public class JmmBackend implements JasminBackend {
         jasminCode.append(getClassDir(ollirClass)).append("\n");
         // getSuper
         jasminCode.append(getSuperDir(ollirClass)).append("\n");
-        //.implements ?
+        //.implements are necessary?
         // getFields
         jasminCode.append(getFieldsDir(ollirClass)).append("\n");
         // getMethods
         jasminCode.append(getMethodsDir(ollirClass)).append("\n");
 
-        System.out.println(jasminCode.toString());
+        //System.out.println(jasminCode.toString());
 
         return new JasminResult(ollirResult, jasminCode.toString(), Collections.emptyList());
     }
@@ -54,7 +54,7 @@ public class JmmBackend implements JasminBackend {
     private String getSuperDir(ClassUnit ollirClass) {
         StringBuilder superDir = new StringBuilder(".super ");
         if(ollirClass.getSuperClass() == null) {
-            ollirClass.setSuperClass("/java/lang/Object");
+            ollirClass.setSuperClass("java/lang/Object");
         }
 
         superDir.append(ollirClass.getSuperClass());
