@@ -35,7 +35,7 @@ public class JasminTest {
 
     @Test
     public void ollirToJasminSimple() {
-        testOllirToJasmin("pt/up/fe/comp/cp2/apps/example_ollir/Simple.ollir");
+        testOllirToJasmin("pt/up/fe/comp/cp2/apps/example_ollir/Simple.ollir", "30");
     }
 
     public static void testOllirToJasmin(String resource, String expectedOutput) {
@@ -60,7 +60,7 @@ public class JasminTest {
         JmmBackend backend = new JmmBackend();
         var result = backend.toJasmin(ollirResult);
 
-        ProjectTestUtils.runJasmin(result, null);
+        ProjectTestUtils.runJasmin(result, expectedOutput);
     }
 
     public static void testOllirToJasmin(String resource) {
