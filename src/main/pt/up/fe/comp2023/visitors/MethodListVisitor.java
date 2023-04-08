@@ -32,7 +32,35 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
     private Type visitMethodCall(JmmNode methodCall, Integer dummy) {
 
+        if (methodCall.getJmmChild(0).getKind().equals("This")){
+            boolean exists = false;
+            for (String method: symbolTable.getMethods()){
+                if (method.equals(methodCall.get("name"))){
+                    exists = true;
+                }
+            }
+            if (exists){
+                return symbolTable.getReturnType(methodCall.get("name"));
+            }
+            else{
+                return new Type("",false);
+            }
+        }
+        else if (methodCall.getJmmChild(0).getKind().equals("BinaryOp")){
+            boolean exists = false;
+            for (String method: symbolTable.getMethods()){
+                if (method.equals(methodCall.get("name"))){
+                    exists = true;
+                }
+            }
+            if (exists){
 
+                return symbolTable.getReturnType(methodCall.get("name"));
+            }
+            else{
+                return new Type("",false);
+            }
+        }
 
         int line = 1;//Integer.valueOf(methodCall.get("line"));
         int col = 1;//Integer.valueOf(methodCall.get("col"));
