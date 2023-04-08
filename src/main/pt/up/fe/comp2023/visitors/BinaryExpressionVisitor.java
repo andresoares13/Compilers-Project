@@ -190,7 +190,7 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
         }
         else if( ( leftOperand.isArray() || rightOperand.isArray() ) && ( operand.equals("+") || operand.equals("-") || operand.equals("*") || operand.equals("/") || operand.equals("<") ) ) {
             if (!(rightOperand.isArray() && node.getJmmParent().getKind().equals("LengthOp"))){
-                if (!(rightOperand.isArray() && node.getJmmParent().getKind().equals("IndexOp") && node.getJmmParent().getJmmChild(1).getKind().equals("Integer"))){
+                if (!(rightOperand.isArray() && node.getJmmParent().getKind().equals("IndexOp") && (node.getJmmParent().getJmmChild(1).getKind().equals("Integer") || node.getJmmParent().getJmmChild(1).getKind().equals("Identifier")))){
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in operation " + operand + " : array cannot be used in this operation"));
                 }
 
