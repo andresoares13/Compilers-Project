@@ -30,6 +30,7 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         addVisit("Identifier", this::visitId);
         addVisit("This", this::visitThisExpr);
         addVisit("NegationOp", this::visitNotExpr);
+        setDefaultVisit(this::defaultVisitor);
     }
 
     private Type visitNotExpr(JmmNode visitNotExpr, Integer dummy) {
@@ -61,16 +62,21 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
 
     private Type visitThisExpr(JmmNode visitThisExpr, Integer dummy) {
         JmmNode parent = visitThisExpr.getJmmParent();
-        Integer line = Integer.valueOf(visitThisExpr.get("line"));
-        Integer col = Integer.valueOf(visitThisExpr.get("col"));
-        while(!parent.getKind().equals("MethodDeclaration") && !parent.getKind().equals("ImportDeclaration")) {
+
+
+        Integer line = 1;//Integer.valueOf(visitThisExpr.get("line"));
+        Integer col = 1;//Integer.valueOf(visitThisExpr.get("col"));
+        while(!parent.getKind().equals("MethodDeclare") && !parent.getKind().equals("ImportDeclare") && !parent.getKind().equals("MethodDeclareMain")) {
+
+            if (parent.getJmmParent() == null){
+                break;
+            }
             parent = parent.getJmmParent();
         }
-        if (parent.getKind().equals("MethodDeclaration")) {
-            if (parent.get("name").equals("main")) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,
-                        "This keyword cannot be used in main method"));
-            }
+
+        if (parent.getKind().equals("MethodDeclareMain")) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,
+                    "This keyword cannot be used in main method"));
         }
         return new Type(this.symbolTable.getClassName(), false);
     }
@@ -135,6 +141,14 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
 
     private Type visitBooleanType(JmmNode booleanType, Integer dummy) {
         return new Type("boolean", false);
+    }
+
+
+    private Type defaultVisitor(JmmNode node, Integer temp){
+        for (JmmNode child : node.getChildren()) {
+            visit(child, 0);
+        }
+        return new Type("",false);
     }
 
     public List<Report> getReports() {

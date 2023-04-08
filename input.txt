@@ -1,23 +1,25 @@
-class CallToUndeclaredMethod {
+import B;
 
-
-
+class ObjectAssignmentPassExtends extends B {
 
     public static void main(String[] args) {
 
     }
 
-    public int foo(boolean p,boolean l) {
-        CallToUndeclaredMethod a;
-        a = new CallToUndeclaredMethod();
+    public ObjectAssignmentPassExtends foo() {
+        ObjectAssignmentPassExtends a;
+        B b;
+        C c;
+        b = this;
 
+        c = this;
 
-        a.b(p,l);
+        a = new ObjectAssignmentPassExtends();
+        b = new B();
 
-        return 0;
-    }
+        // ObjectAssignmentPassExtends extends B
+        b = a;
 
-    public int b(int c, int l){
-        return 0;
+        return a;
     }
 }

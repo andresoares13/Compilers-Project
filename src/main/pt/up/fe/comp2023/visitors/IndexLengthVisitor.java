@@ -44,20 +44,21 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
         Type r = new Type("", false);
 
         switch(index.getJmmChild(0).getKind()) {
-            case "BinOP":{
+            case "BinaryOP":{
                 BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
                 l = binOpSemanticVisitor.visit(index.getJmmChild(0), 0);
                 break;
             }
-            case "IntLiteral":
-            case "BooleanType":
-            case "NewIntArrVarAttribution":
-            case "NewClassAttribution":
-            case "Id":
-            case "ThisExpr":
-            case "NotExpr":{
+            case "Integer":
+            case "Bool":
+            case "NewArr":
+            case "NewFunc":
+            case "Identifier":
+            case "This":
+            case "NegationOp":{
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 l = variableSemanticVisitor.visit(index.getJmmChild(0), 0);
+
                 break;
             }
 
@@ -68,18 +69,18 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
         }
 
         switch(index.getJmmChild(1).getKind()) {
-            case "BinOP":{
+            case "BinaryOP":{
                 BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
                 r = binOpSemanticVisitor.visit(index.getJmmChild(1), 0);
                 break;
             }
-            case "IntLiteral":
-            case "BooleanType":
-            case "NewIntArrVarAttribution":
-            case "NewClassAttribution":
-            case "Id":
-            case "ThisExpr":
-            case "NotExpr":{
+            case "Integer":
+            case "Bool":
+            case "NewArr":
+            case "NewFunc":
+            case "Identifier":
+            case "This":
+            case "NegationOp":{
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 r = variableSemanticVisitor.visit(index.getJmmChild(1), 0);
                 break;
@@ -90,11 +91,12 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
             }
         }
 
+
         int lineLeft = 1;//Integer.valueOf(index.getJmmChild(0).get("line"));
         int colLeft = 1;//Integer.valueOf(index.getJmmChild(0).get("col"));
         int lineRight = 1;//Integer.valueOf(index.getJmmChild(1).get("line"));
         int colRight= 1;//Integer.valueOf(index.getJmmChild(1).get("col"));
-        if(!l.isArray() && !l.getName().equals("intArr")){
+        if(!l.isArray() ){
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in Indexing: variable " + index.getJmmChild(0).get("value") + " is not an array"));
         }
         else if(!r.getName().equals("int") || r.isArray()) {
