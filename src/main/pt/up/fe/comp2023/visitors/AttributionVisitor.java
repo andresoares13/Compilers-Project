@@ -67,6 +67,12 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
             }
         }
 
+        for (int k=0;k<symbolTable.getFields().size();k++){
+            if (symbolTable.getFields().get(k).getName().equals(name)){
+                l = symbolTable.getFields().get(k).getType();
+            }
+        }
+
 
         switch(atribution.getJmmChild(0).getKind()) {
             case "BinaryOp":{
@@ -121,9 +127,7 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
 
 
             if (!(symbolTable.getImports().contains(r.getName()) && atribution.getJmmChild(0).getKind().equals("FuncOp"))){
-                System.out.println(name);
-                System.out.println(l);
-                System.out.println(atribution.getChildren());
+
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
             }
 
@@ -154,6 +158,12 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
                 if (tempSymbolListVar.get(k).getName().equals(name)){
                     l=  tempSymbolListVar.get(k).getType();
                 }
+            }
+        }
+
+        for (int i=0;i<symbolTable.getFields().size();i++){
+            if (symbolTable.getFields().get(i).getName().equals(name)){
+                l = symbolTable.getFields().get(i).getType();
             }
         }
 
@@ -233,12 +243,18 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
         int line = 1;//Integer.valueOf(atribution.getJmmChild(0).get("line"));
         int col = 1;//Integer.valueOf(atribution.getJmmChild(0).get("col"));
 
-        if (!l.isArray())
+        if (!l.isArray()){
+
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not an array"));
-        if (!r.getName().equals("int"))
+        }
+
+        if (!r.getName().equals("int")){
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: attribution index is not int"));
-        if (!v.getName().equals("int"))
+        }
+
+        if (!v.getName().equals("int")){
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assigned value is not int"));
+        }
 
         return new Type("int", true);
     }

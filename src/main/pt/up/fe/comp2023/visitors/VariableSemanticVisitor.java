@@ -40,7 +40,8 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         int col = 1;//Integer.valueOf(visitNotExpr.get("col"));
 
         switch(visitNotExpr.getJmmChild(0).getKind()) {
-            case "BinaryOp": {
+            case "BinaryOp":
+            case "ParOp":{
                 BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
                 r = binOpSemanticVisitor.visit(visitNotExpr.getJmmChild(0),0);
                 break;
@@ -65,6 +66,7 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         }
 
         if (!r.getName().equals("boolean")) {
+            System.out.println(visitNotExpr.getChildren());
             Report report = new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Not operation can only be applied to boolean types");
             reports.add(report);
         }
@@ -165,6 +167,12 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
 
             if (tempSymbolListVar.get(k).getName().equals(name)){
                 return  tempSymbolListVar.get(k).getType();
+            }
+        }
+
+        for (int k=0;k<symbolTable.getFields().size();k++){
+            if (symbolTable.getFields().get(k).getName().equals(name)){
+                return symbolTable.getFields().get(k).getType();
             }
         }
 

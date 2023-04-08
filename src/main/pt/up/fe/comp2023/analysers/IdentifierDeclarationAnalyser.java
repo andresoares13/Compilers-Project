@@ -31,9 +31,11 @@ public class IdentifierDeclarationAnalyser implements SemanticAnalyser {
         List<Report> reports= new ArrayList<>();
 
         for (int i=0;i<idList.size();i++){
+
             boolean found = false;
             boolean imported = false;
             boolean superR = false;
+            boolean field = false;
             for (int j=0;j<methods.size();j++){
 
                 List<Symbol> tempSymbolListPar = symbolTable.getParameters(methods.get(j));
@@ -63,8 +65,16 @@ public class IdentifierDeclarationAnalyser implements SemanticAnalyser {
                 superR = true;
             }
 
+            for (int j=0;j<symbolTable.getFields().size();j++){
 
-            if (!found && !imported && !superR){
+                if (symbolTable.getFields().get(j).getName().equals(idList.get(i))){
+                    field = true;
+                }
+            }
+
+
+            if (!found && !imported && !superR && !field){
+
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, -1, -1, "The variable " + idList.get(i)+ " was not declared"));
             }
         }

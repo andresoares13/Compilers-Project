@@ -75,6 +75,13 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                 }
             }
 
+            for (int i=0;i<symbolTable.getFields().size();i++){
+                if (symbolTable.getFields().get(i).getName().equals(methodCall.getJmmChild(0).get("value"))){
+                    name = symbolTable.getFields().get(i).getName();
+                    type = symbolTable.getFields().get(i).getType();
+                }
+            }
+
 
             boolean imported = false;
 
@@ -152,6 +159,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                 List<Symbol> params = symbolTable.getParameters(methodCall.get("name"));
 
                 if(!params.get(i-1).getType().equals(argType)) {
+
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Error on method " + methodCall.get("name") + ": invalid method call, types of parameters are invalid. Parameter " + params.get(i-1).getName() + " expected " + params.get(i-1).getType().getName() + " but got " + argType.getName()));
                 }
             }
@@ -164,6 +172,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
     private Type visitMethodDeclaration(JmmNode methodDeclaration, Integer dummy) {
         int numOfChildren = methodDeclaration.getChildren().size() - 1;
+
         if (numOfChildren > -1) {
             Type type = new Type("", false);
 
@@ -179,11 +188,14 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                     type = variableSemanticVisitor.visit(methodDeclaration.getJmmChild(numOfChildren), 0);
                     break;
                 }
-                case "BinaryOP": {
+                case "ParOp":
+                case "BinaryOp": {
+
                     BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
                     type = binOpSemanticVisitor.visit(methodDeclaration.getJmmChild(numOfChildren), 0);
                     break;
                 }
+
                 default: {
                     type = visit(methodDeclaration.getJmmChild(numOfChildren));
                     break;
@@ -223,6 +235,8 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error: invalid return type on method " + methodDeclaration.get("name") + " method not declared or imported"));
                         }
                     } else {
+
+
                         reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error: invalid return type on method " + methodDeclaration.get("name") + ". Expected " + methodDeclaration.getJmmChild(0).get("name") + " but got " + type.getName()));
                     }
                 }

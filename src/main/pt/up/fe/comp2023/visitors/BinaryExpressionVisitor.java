@@ -25,13 +25,65 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
     protected void buildVisitor() {
 
         addVisit("BinaryOp", this::visitBinaryOp);
+        addVisit("ParOp",this::visitParOp);
+
         setDefaultVisit(this::defaultVisitor);
+    }
+
+    private  Type visitParOp(JmmNode node, Integer temp){
+        Type type = new Type("",false);
+
+        switch(node.getJmmChild(0).getKind()) {
+            case "Integer":
+            case "Bool":
+            case "Identifier":
+            case "NegationOp":
+            case "NewArr":
+            case "NewFunc":
+            case "NotExpr": {
+                VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
+                type = variableSemanticVisitor.visit(node.getJmmChild(0), 0);
+
+                break;
+            }
+            case "LengthOp":
+            case "IndexOp":{
+                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                type = indexingSemanticVisitor.visit(node.getJmmChild(0), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                type = methodSemanticVisitor.visit(node.getJmmChild(0), 0);
+                break;
+            }
+            case "This":{
+                type = symbolTable.getReturnType(node.getJmmParent().get("name"));
+                break;
+            }
+
+            case "BinaryOp":{
+                BinaryExpressionVisitor binaryVisitor = new BinaryExpressionVisitor(symbolTable);
+                type = binaryVisitor.visit(node.getJmmChild(0),0);
+                break;
+            }
+
+            default: {
+                type = visit(node.getJmmChild(0));
+                break;
+            }
+        }
+
+        return type;
     }
 
     private Type visitBinaryOp(JmmNode node, Integer temp){
         String operand = node.get("op");
         Type leftOperand = new Type("", false);
         Type rightOperand = new Type("", false);
+
 
 
         switch(node.getJmmChild(0).getKind()) {
@@ -47,14 +99,15 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
 
                 break;
             }
-            case "LengthMethod":
-            case "Indexing":{
+            case "LengthOp":
+            case "IndexOp":{
                 IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
                 leftOperand = indexingSemanticVisitor.visit(node.getJmmChild(0), 0);
                 break;
             }
             case "MethodDeclare":
             case "FuncOp":{
+
                 MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
                 leftOperand = methodSemanticVisitor.visit(node.getJmmChild(0), 0);
                 break;
@@ -90,8 +143,8 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
 
                 break;
             }
-            case "LengthMethod":
-            case "Indexing":{
+            case "LengthOp":
+            case "IndexOp":{
                 IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
                 rightOperand = indexingSemanticVisitor.visit(node.getJmmChild(1), 0);
                 break;
@@ -104,6 +157,11 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
             }
             case "This":{
                 rightOperand = symbolTable.getReturnType(node.getJmmParent().get("name"));
+                break;
+            }
+            case "ParOp":{
+                BinaryExpressionVisitor binaryVisitor = new BinaryExpressionVisitor(symbolTable);
+                rightOperand = binaryVisitor.visit(node.getJmmChild(1).getJmmChild(0),0);
                 break;
             }
 
@@ -132,7 +190,10 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
         }
         else if( ( leftOperand.isArray() || rightOperand.isArray() ) && ( operand.equals("+") || operand.equals("-") || operand.equals("*") || operand.equals("/") || operand.equals("<") ) ) {
             if (!(rightOperand.isArray() && node.getJmmParent().getKind().equals("LengthOp"))){
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in operation " + operand + " : array cannot be used in this operation"));
+                if (!(rightOperand.isArray() && node.getJmmParent().getKind().equals("IndexOp") && node.getJmmParent().getJmmChild(1).getKind().equals("Integer"))){
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in operation " + operand + " : array cannot be used in this operation"));
+                }
+
             }
 
         }
@@ -160,10 +221,11 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
     }
 
     private Type defaultVisitor(JmmNode node, Integer temp){
+        Type type = new Type("",false);
         for (JmmNode child : node.getChildren()) {
-            visit(child, 0);
+            type=visit(child, 0);
         }
-        return new Type("",false);
+        return type;
     }
 
     public List<Report> getReports() {

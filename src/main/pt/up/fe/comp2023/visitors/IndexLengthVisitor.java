@@ -47,6 +47,8 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
 
 
         if(!type.isArray()) {
+
+            System.out.println(type);
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in LengthMethod: " + var + " is not an array"));
             return new Type("none", false);
         }
@@ -58,9 +60,23 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
         Type r = new Type("", false);
 
         switch(index.getJmmChild(0).getKind()) {
-            case "BinaryOP":{
-                BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
-                l = binOpSemanticVisitor.visit(index.getJmmChild(0), 0);
+            case "BinaryOp":{
+                JmmNode child = index.getJmmChild(0);
+                while (child.getKind().equals("BinaryOp")){
+                    if (!child.getJmmChild(0).getKind().equals("BinaryOp")){
+                        break;
+                    }
+                    child = child.getJmmChild(0);
+
+
+                }
+
+                VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
+
+                l = variableSemanticVisitor.visit(child.getJmmChild(1), 0);
+                if (!l.isArray()){
+                    System.out.println(child.getJmmChild(1));
+                }
                 break;
             }
             case "Integer":
@@ -89,7 +105,7 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
         }
 
         switch(index.getJmmChild(1).getKind()) {
-            case "BinaryOP":{
+            case "BinaryOp":{
                 BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
                 r = binOpSemanticVisitor.visit(index.getJmmChild(1), 0);
                 break;
@@ -123,7 +139,7 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
         int lineRight = 1;//Integer.valueOf(index.getJmmChild(1).get("line"));
         int colRight= 1;//Integer.valueOf(index.getJmmChild(1).get("col"));
         if(!l.isArray() ){
-            System.out.println(l);
+
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in Indexing: variable " + index.getJmmChild(0).get("value") + " is not an array"));
         }
         else if(!r.getName().equals("int") || r.isArray()) {
