@@ -57,7 +57,7 @@ public class ConditionalStatementVisitor extends PreorderJmmVisitor<Integer, Typ
                 type = indexingSemanticVisitor.visit(ifStatement.getJmmChild(0), 0);
                 break;
             }
-            case "MethodDeclaration":
+            case "MethodDeclare":
             case "FuncOp":{
                 MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
                 type = methodSemanticVisitor.visit(ifStatement.getJmmChild(0), 0);
@@ -109,7 +109,7 @@ public class ConditionalStatementVisitor extends PreorderJmmVisitor<Integer, Typ
                 type = indexingSemanticVisitor.visit(whileStatement.getJmmChild(0), 0);
                 break;
             }
-            case "MethodDeclaration":
+            case "MethodDeclare":
             case "FuncOp":{
                 MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
                 type = methodSemanticVisitor.visit(whileStatement.getJmmChild(0), 0);

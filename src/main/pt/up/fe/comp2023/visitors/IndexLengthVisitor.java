@@ -61,6 +61,12 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
 
                 break;
             }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                l = methodSemanticVisitor.visit(index.getJmmChild(0), 0);
+                break;
+            }
 
             default:{
                 l = visit(index.getJmmChild(0));
@@ -83,6 +89,12 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
             case "NegationOp":{
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 r = variableSemanticVisitor.visit(index.getJmmChild(1), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                r = methodSemanticVisitor.visit(index.getJmmChild(1), 0);
                 break;
             }
             default:{

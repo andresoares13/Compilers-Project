@@ -45,6 +45,18 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
                 r = binOpSemanticVisitor.visit(visitNotExpr.getJmmChild(0),0);
                 break;
             }
+            case "IndexOp":
+            case "LengthOp":{
+                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                r = indexingSemanticVisitor.visit(visitNotExpr.getJmmChild(0), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                r = methodSemanticVisitor.visit(visitNotExpr.getJmmChild(0), 0);
+                break;
+            }
 
             default:{
                 r = visit(visitNotExpr.getJmmChild(0));
@@ -93,6 +105,19 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
                 varType = binOpSemanticVisitor.visit(newIntArrVarAttribution.getJmmChild(0),0);
                 break;
             }
+            case "IndexOp":
+            case "LengthOp":{
+                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                varType = indexingSemanticVisitor.visit(newIntArrVarAttribution.getJmmChild(0), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                varType = methodSemanticVisitor.visit(newIntArrVarAttribution.getJmmChild(0), 0);
+                break;
+            }
+
 
             default:{
                 varType = visit(newIntArrVarAttribution.getJmmChild(0));
@@ -100,6 +125,7 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
             }
         }
         Integer line = 1;//Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("line"));
+
         Integer col = 1;//Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("col"));
         if (varType.getName() != "int") {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,

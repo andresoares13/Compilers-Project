@@ -73,6 +73,12 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
                 r = indexingSemanticVisitor.visit(atribution.getJmmChild(0), 0);
                 break;
             }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                r = methodSemanticVisitor.visit(atribution.getJmmChild(0), 0);
+                break;
+            }
 
             default:{
                 r = visit(atribution.getJmmChild(0));
@@ -90,8 +96,13 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
         if(!l.getName().equals(r.getName()) &&
                 ( !symbolTable.getImports().contains(l.getName()) || !symbolTable.getImports().contains(r.getName())) &&
                 (!l.getName().equals(symbolTable.getSuper()) || !r.getName().equals(symbolTable.getClassName())) &&
-                !(l.getName().equals("intArr") && r.getName().equals("int") && r.isArray())){
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
+                !(r.getName().equals("int") && r.isArray())){
+
+
+            if (!(symbolTable.getImports().contains(r.getName()) && atribution.getJmmChild(0).getKind().equals("FuncOp"))){
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
+            }
+
         }
         return new Type(l.getName(), l.isArray());
     }
@@ -143,6 +154,12 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
                 r = indexingSemanticVisitor.visit(atribution.getJmmChild(0), 0);
                 break;
             }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                r = methodSemanticVisitor.visit(atribution.getJmmChild(0), 0);
+                break;
+            }
 
             default:{
                 r = visit(atribution.getJmmChild(0));
@@ -171,6 +188,12 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
             case "LengthOp":{
                 IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
                 v = indexingSemanticVisitor.visit(atribution.getJmmChild(1), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                v = methodSemanticVisitor.visit(atribution.getJmmChild(1), 0);
                 break;
             }
 

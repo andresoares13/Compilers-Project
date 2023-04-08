@@ -54,6 +54,12 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
                 leftOperand = indexingSemanticVisitor.visit(node.getJmmChild(0), 0);
                 break;
             }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                leftOperand = methodSemanticVisitor.visit(node.getJmmChild(0), 0);
+                break;
+            }
 
             default: {
                 leftOperand = visit(node.getJmmChild(0));
@@ -78,7 +84,13 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
             case "LengthMethod":
             case "Indexing":{
                 IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
-                rightOperand = indexingSemanticVisitor.visit(node.getJmmChild(0), 0);
+                rightOperand = indexingSemanticVisitor.visit(node.getJmmChild(1), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                rightOperand = methodSemanticVisitor.visit(node.getJmmChild(1), 0);
                 break;
             }
 

@@ -25,7 +25,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
     @Override
     protected void buildVisitor() {
         addVisit("FuncOp", this::visitMethodCall);
-        //addVisit("MethodDeclare", this::visitMethodDeclaration);
+        addVisit("MethodDeclare", this::visitMethodDeclaration);
         setDefaultVisit(this::defaultVisitor);
     }
 
@@ -43,6 +43,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
         for (int i=0;i<methods.size();i++){
             if (methods.get(i).equals(methodCall.get("name"))){
+
                 declared = true;
 
             }
@@ -50,7 +51,9 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
         }
 
+
         if (!declared){
+
             String name = "";
             Type type = new Type("", false);
             for (int i=0;i<methods.size();i++){
@@ -79,6 +82,10 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                 if (import_.equals(name)){
                     imported = true;
                 }
+                else if (import_.equals(methodCall.getJmmChild(0).get("value"))){
+                    imported = true;
+                    type = new Type(methodCall.getJmmChild(0).get("value"),false);
+                }
             }
 
 
@@ -87,10 +94,12 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
             if (!imported && (!symbolTable.getClassName().equals(name) || symbolTable.getSuper().equals(""))){
                 reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Method Undeclared"));
+
                 return type;
             }
 
             else{
+
                 return type;
             }
 
@@ -127,6 +136,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                         argType = indexingSemanticVisitor.visit(methodCall.getJmmChild(i), 0);
                         break;
                     }
+
                     case "BinaryOP": {
                         BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
                         argType = binOpSemanticVisitor.visit(methodCall.getJmmChild(i),0);
@@ -150,6 +160,78 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
         return type;
     }
+
+
+    private Type visitMethodDeclaration(JmmNode methodDeclaration, Integer dummy) {
+        int numOfChildren = methodDeclaration.getChildren().size() - 1;
+        if (numOfChildren > -1) {
+            Type type = new Type("", false);
+
+            switch (methodDeclaration.getJmmChild(numOfChildren).getKind()) {
+                case "Integer":
+                case "Bool":
+                case "NewArr":
+                case "NewFunc":
+                case "Identifier":
+                case "This":
+                case "NegationOp": {
+                    VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
+                    type = variableSemanticVisitor.visit(methodDeclaration.getJmmChild(numOfChildren), 0);
+                    break;
+                }
+                case "BinaryOP": {
+                    BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
+                    type = binOpSemanticVisitor.visit(methodDeclaration.getJmmChild(numOfChildren), 0);
+                    break;
+                }
+                default: {
+                    type = visit(methodDeclaration.getJmmChild(numOfChildren));
+                    break;
+                }
+            }
+
+            int line = 1;//Integer.valueOf(methodDeclaration.getJmmChild(numOfChildren).get("line"));
+            int col = 1;//Integer.valueOf(methodDeclaration.getJmmChild(numOfChildren).get("col"));
+            if (type != null && !type.isArray()) {
+
+                if (!type.getName().equals(methodDeclaration.getJmmChild(0).get("name"))) {
+                    if (methodDeclaration.getJmmChild(numOfChildren).getKind().equals("FuncOp")) {
+                        Type callerType = new Type("", false);
+                        switch (methodDeclaration.getJmmChild(numOfChildren).getJmmChild(0).getKind()) {
+                            case "Integer":
+                            case "Bool":
+                            case "NewArr":
+                            case "NewFunc":
+                            case "Identifier":
+                            case "This":
+                            case "NegationOp": {
+                                VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
+                                callerType = variableSemanticVisitor.visit(methodDeclaration.getJmmChild(numOfChildren).getJmmChild(0), 0);
+                                break;
+                            }
+                            case "BinaryOP": {
+                                BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
+                                callerType = binOpSemanticVisitor.visit(methodDeclaration.getJmmChild(numOfChildren).getJmmChild(0), 0);
+                                break;
+                            }
+                            default: {
+                                callerType = visit(methodDeclaration.getJmmChild(numOfChildren).getJmmChild(0));
+                                break;
+                            }
+                        }
+                        if (!symbolTable.getImports().contains(callerType.getName())) {
+                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error: invalid return type on method " + methodDeclaration.get("name") + " method not declared or imported"));
+                        }
+                    } else {
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error: invalid return type on method " + methodDeclaration.get("name") + ". Expected " + methodDeclaration.getJmmChild(0).get("name") + " but got " + type.getName()));
+                    }
+                }
+            }
+        }
+        return new Type("none", false);
+    }
+
+
 
     private Type defaultVisitor(JmmNode node, Integer temp){
         for (JmmNode child : node.getChildren()) {

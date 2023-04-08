@@ -1,24 +1,14 @@
-import B;
+import M;
 
-class ObjectAssignmentPassExtends extends B {
+class BoolTimesInt {
 
     public static void main(String[] args) {
 
     }
 
-    public ObjectAssignmentPassExtends foo() {
-        ObjectAssignmentPassExtends a;
-        B b;
-        C c;
-        b = this;
-
-        c = this;
-
-        a = new ObjectAssignmentPassExtends();
-        b = new B();
-
-        // ObjectAssignmentPassExtends extends B
-        b = a;
+    public int fool(int a) {
+        bool c;
+        c = M.foo();
 
         return a;
     }
