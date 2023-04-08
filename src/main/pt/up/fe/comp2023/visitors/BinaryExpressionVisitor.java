@@ -41,7 +41,6 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
             case "NegationOp":
             case "NewArr":
             case "NewFunc":
-            case "This":
             case "NotExpr": {
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 leftOperand = variableSemanticVisitor.visit(node.getJmmChild(0), 0);
@@ -60,6 +59,16 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
                 leftOperand = methodSemanticVisitor.visit(node.getJmmChild(0), 0);
                 break;
             }
+            case "This":{
+                leftOperand = symbolTable.getReturnType(node.getJmmParent().get("name"));
+                break;
+            }
+
+            case "ParOp":{
+                BinaryExpressionVisitor binaryVisitor = new BinaryExpressionVisitor(symbolTable);
+                leftOperand = binaryVisitor.visit(node.getJmmChild(0).getJmmChild(0),0);
+                break;
+            }
 
             default: {
                 leftOperand = visit(node.getJmmChild(0));
@@ -68,14 +77,14 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
         }
 
 
+
         switch(node.getJmmChild(1).getKind()) {
             case "Integer":
             case "Bool":
             case "Identifier":
             case "NegationOp":
             case "NewArr":
-            case "NewFunc":
-            case "This":{
+            case "NewFunc":{
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 rightOperand = variableSemanticVisitor.visit(node.getJmmChild(1), 0);
 
@@ -93,6 +102,10 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
                 rightOperand = methodSemanticVisitor.visit(node.getJmmChild(1), 0);
                 break;
             }
+            case "This":{
+                rightOperand = symbolTable.getReturnType(node.getJmmParent().get("name"));
+                break;
+            }
 
             default:{
                 rightOperand = visit(node.getJmmChild(1));
@@ -106,12 +119,22 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
         int lineRight = 1;//Integer.parseInt(node.getJmmChild(1).get("line"));
         int colRight = 1;//Integer.parseInt(node.getJmmChild(1).get("col"));
 
+
+
+
+
+
+
+
         if(!leftOperand.getName().equals(rightOperand.getName())){
 
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineRight, colRight, "Error in operation " + operand + " : operands have different types"));
         }
         else if( ( leftOperand.isArray() || rightOperand.isArray() ) && ( operand.equals("+") || operand.equals("-") || operand.equals("*") || operand.equals("/") || operand.equals("<") ) ) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in operation " + operand + " : array cannot be used in this operation"));
+            if (!(rightOperand.isArray() && node.getJmmParent().getKind().equals("LengthOp"))){
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in operation " + operand + " : array cannot be used in this operation"));
+            }
+
         }
         else if(!leftOperand.getName().equals("int") && ( operand.equals("+") || operand.equals("-") || operand.equals("*") || operand.equals("/") || operand.equals("<") ) ) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in operation " + operand + " : operands have invalid types for this operation. " + operand + " expects operands of type integer"));

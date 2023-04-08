@@ -28,12 +28,26 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
     }
 
     private Type visitLength(JmmNode lengthNode, Integer dummy) {
+        Type type = new Type("",false);
+        String var = "";
         VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
-        Type type = variableSemanticVisitor.visit(lengthNode.getJmmChild(0));
+        if (lengthNode.getJmmChild(0).getKind().equals("BinaryOp")){
+            type = variableSemanticVisitor.visit(lengthNode.getJmmChild(0).getJmmChild(1));
+            var = lengthNode.getJmmChild(0).getJmmChild(1).get("value");
+        }
+        else{
+
+            type = variableSemanticVisitor.visit(lengthNode.getJmmChild(0));
+            var = lengthNode.getJmmChild(0).get("value");
+        }
+
         int line = 1;//Integer.valueOf(lengthNode.getJmmChild(0).get("line"));
         int col = 1;//Integer.valueOf(lengthNode.getJmmChild(0).get("col"));
+
+
+
         if(!type.isArray()) {
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in LengthMethod: " + lengthNode.getJmmChild(0).get("name") + " is not an array"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in LengthMethod: " + var + " is not an array"));
             return new Type("none", false);
         }
         return new Type("int", false);
@@ -109,6 +123,7 @@ public class IndexLengthVisitor extends PreorderJmmVisitor<Integer, Type> {
         int lineRight = 1;//Integer.valueOf(index.getJmmChild(1).get("line"));
         int colRight= 1;//Integer.valueOf(index.getJmmChild(1).get("col"));
         if(!l.isArray() ){
+            System.out.println(l);
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, lineLeft, colLeft, "Error in Indexing: variable " + index.getJmmChild(0).get("value") + " is not an array"));
         }
         else if(!r.getName().equals("int") || r.isArray()) {

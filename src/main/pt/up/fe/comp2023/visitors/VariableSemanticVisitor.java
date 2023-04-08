@@ -139,23 +139,35 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         int line = 1;//Integer.valueOf(id.get("line"));
         int col = 1;//Integer.valueOf(id.get("col"));
 
-        List<String> methods = symbolTable.getMethods();
-        for (int i=0;i<methods.size();i++){
-            List<Symbol> tempSymbolListPar = symbolTable.getParameters(methods.get(i));
-            List<Symbol> tempSymbolListVar = symbolTable.getLocalVariables(methods.get(i));
-            for (int k=0;k<tempSymbolListPar.size();k++){
+        JmmNode parent = id;
 
-                if (tempSymbolListPar.get(k).getName().equals(name)){
-                    return  tempSymbolListPar.get(k).getType();
+        if (id.getJmmParent() != null){
+            while(!parent.getKind().equals("MethodDeclare") && !parent.getKind().equals("ImportDeclare") && !parent.getKind().equals("MethodDeclareMain")) {
+                if (parent.getJmmParent() == null){
+                    break;
                 }
-            }
-            for (int k=0;k<tempSymbolListVar.size();k++){
-
-                if (tempSymbolListVar.get(k).getName().equals(name)){
-                    return  tempSymbolListVar.get(k).getType();
-                }
+                parent = parent.getJmmParent();
             }
         }
+
+
+        List<String> methods = symbolTable.getMethods();
+
+        List<Symbol> tempSymbolListPar = symbolTable.getParameters(parent.get("name"));
+        List<Symbol> tempSymbolListVar = symbolTable.getLocalVariables(parent.get("name"));
+        for (int k=0;k<tempSymbolListPar.size();k++){
+
+            if (tempSymbolListPar.get(k).getName().equals(name)){
+                return  tempSymbolListPar.get(k).getType();
+            }
+        }
+        for (int k=0;k<tempSymbolListVar.size();k++){
+
+            if (tempSymbolListVar.get(k).getName().equals(name)){
+                return  tempSymbolListVar.get(k).getType();
+            }
+        }
+
 
 
         return new Type("none", false);
