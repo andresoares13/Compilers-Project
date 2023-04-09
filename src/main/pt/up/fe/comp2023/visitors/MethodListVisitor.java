@@ -204,11 +204,12 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
             }
 
-            if (symbolTable.getParameters(methodCall.get("name")).size() < methodCall.getChildren().size() - 1){
-                int argLine = Integer.valueOf(methodCall.get("lineStart"));
-                int argCol = Integer.valueOf(methodCall.get("colStart"));
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Wrong Number of Parameters on method " + methodCall.get("name")));
-            }
+        }
+
+        if (symbolTable.getParameters(methodCall.get("name")).size() != methodCall.getChildren().size() - 1){
+            int argLine = Integer.valueOf(methodCall.get("lineStart"));
+            int argCol = Integer.valueOf(methodCall.get("colStart"));
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Wrong Number of Parameters on method " + methodCall.get("name")));
         }
 
 
