@@ -35,6 +35,8 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
         int line = Integer.valueOf(atribution.getJmmChild(0).get("lineStart"));
         int col = Integer.valueOf(atribution.getJmmChild(0).get("colStart"));
 
+
+
         JmmNode parent = atribution;
         if (atribution.getJmmParent() != null){
             while(!parent.getKind().equals("MethodDeclare") && !parent.getKind().equals("ImportDeclare") && !parent.getKind().equals("MethodDeclareMain")) {
@@ -94,6 +96,7 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
             case "NegationOp":{
                 VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
                 r = variableSemanticVisitor.visit(atribution.getJmmChild(0), 0);
+
                 break;
             }
             case "IndexOp":
@@ -117,25 +120,25 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
 
 
 
-        if (l.isArray() && !r.isArray() && !atribution.getJmmChild(1).getKind().equals("NewArr"))
+        if (l.isArray() && !r.isArray() && !atribution.getJmmChild(0).getKind().equals("NewArr"))
         {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Arrays are not allowed to be assigned"));
+        }
+
+        if (symbolTable.getImports().contains(r.getName()) && atribution.getJmmChild(0).getKind().equals("FuncOp")){
+            r = l;
         }
 
         if(!l.getName().equals(r.getName()) &&
                 ( !symbolTable.getImports().contains(l.getName()) || !symbolTable.getImports().contains(r.getName())) &&
                 (!l.getName().equals(symbolTable.getSuper()) || !r.getName().equals(symbolTable.getClassName())) &&
-                !(r.getName().equals("int") && r.isArray())){
+                !(l.isArray() && r.getName().equals("int") && r.isArray())){
+
+
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
 
 
 
-
-            if (!(symbolTable.getImports().contains(r.getName()) && atribution.getJmmChild(0).getKind().equals("FuncOp"))){
-                if (!(symbolTable.getSuper().equals(r.getName()))){
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
-                }
-
-            }
 
         }
         return new Type(l.getName(), l.isArray());
