@@ -69,8 +69,17 @@ public class ConditionalStatementVisitor extends PreorderJmmVisitor<Integer, Typ
                 break;
             }
         }
-        int line = 1;//Integer.valueOf(ifStatement.getJmmChild(0).get("line"));
-        int col = 1;//Integer.valueOf(ifStatement.getJmmChild(0).get("col"));
+        int line = Integer.valueOf(ifStatement.getJmmChild(0).get("lineStart"));
+        int col = Integer.valueOf(ifStatement.getJmmChild(0).get("colStart"));
+
+        if (ifStatement.getJmmChild(0).getKind().equals("FuncOp")){
+            if (ifStatement.getJmmChild(0).getJmmChild(0).getKind().equals("BinaryOp")){
+                BinaryExpressionVisitor bVisitor = new BinaryExpressionVisitor(symbolTable);
+                type = bVisitor.visit(ifStatement.getJmmChild(0).getJmmChild(0),0);
+            }
+        }
+
+
         if(!type.getName().equals("boolean")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in IfStatement: condition has to be of type boolean"));
         }

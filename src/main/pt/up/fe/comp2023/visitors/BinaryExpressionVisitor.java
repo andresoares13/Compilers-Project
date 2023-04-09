@@ -181,7 +181,11 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
 
 
 
+        if (node.getJmmParent().getKind().equals("FuncOp") && operand.equals("<")){
+            MethodListVisitor tempMethodVisitor = new MethodListVisitor(symbolTable);
+            rightOperand= tempMethodVisitor.visit(node.getJmmParent(),0);
 
+        }
 
 
         if(!leftOperand.getName().equals(rightOperand.getName())){
