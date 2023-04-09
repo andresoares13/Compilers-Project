@@ -32,7 +32,8 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
         Type l = new Type("", false);
         Type r = new Type("", false);
         String name = atribution.get("name");
-
+        int line = Integer.valueOf(atribution.getJmmChild(0).get("lineStart"));
+        int col = Integer.valueOf(atribution.getJmmChild(0).get("colStart"));
 
         JmmNode parent = atribution;
         if (atribution.getJmmParent() != null){
@@ -70,6 +71,10 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
         for (int k=0;k<symbolTable.getFields().size();k++){
             if (symbolTable.getFields().get(k).getName().equals(name)){
                 l = symbolTable.getFields().get(k).getType();
+                if (parent.get("name").equals("main")){
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Bad Access to field in Static Method"));
+                    return new Type(l.getName(), l.isArray());
+                }
             }
         }
 
@@ -110,8 +115,7 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
             }
         }
 
-        int line = 1;//Integer.valueOf(atribution.getJmmChild(0).get("line"));
-        int col = 1;//Integer.valueOf(atribution.getJmmChild(0).get("col"));
+
 
         if (l.isArray() && !r.isArray() && !atribution.getJmmChild(1).getKind().equals("NewArr"))
         {
@@ -127,8 +131,10 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
 
 
             if (!(symbolTable.getImports().contains(r.getName()) && atribution.getJmmChild(0).getKind().equals("FuncOp"))){
+                if (!(symbolTable.getSuper().equals(r.getName()))){
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
+                }
 
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
             }
 
         }

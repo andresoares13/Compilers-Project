@@ -62,8 +62,8 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
             }
         }
 
-        int line = 1;//Integer.valueOf(methodCall.get("line"));
-        int col = 1;//Integer.valueOf(methodCall.get("col"));
+        int line = Integer.valueOf(methodCall.get("lineStart"));
+        int col = Integer.valueOf(methodCall.get("colStart"));
 
 
         List<String> methods = symbolTable.getMethods();
@@ -127,8 +127,14 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
 
 
+
             if (!imported && (!symbolTable.getClassName().equals(name) || symbolTable.getSuper().equals(""))){
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Method Undeclared"));
+                VariableSemanticVisitor variableVisitor = new VariableSemanticVisitor(symbolTable);
+                Type v = variableVisitor.visit(methodCall.getJmmChild(0),0);
+                if (!v.getName().equals(symbolTable.getSuper())){
+                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Method Undeclared"));
+                }
+
 
                 return type;
             }

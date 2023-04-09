@@ -172,10 +172,10 @@ public class BinaryExpressionVisitor extends PreorderJmmVisitor <Integer, Type> 
         }
 
 
-        int lineLeft = 1;//Integer.parseInt(node.getJmmChild(0).get("line"));
-        int colLeft = 1;//Integer.parseInt(node.getJmmChild(0).get("col"));
-        int lineRight = 1;//Integer.parseInt(node.getJmmChild(1).get("line"));
-        int colRight = 1;//Integer.parseInt(node.getJmmChild(1).get("col"));
+        int lineLeft = Integer.parseInt(node.getJmmChild(0).get("lineStart"));
+        int colLeft = Integer.parseInt(node.getJmmChild(0).get("colStart"));
+        int lineRight = Integer.parseInt(node.getJmmChild(1).get("lineEnd"));
+        int colRight = Integer.parseInt(node.getJmmChild(1).get("colEnd"));
 
 
 
