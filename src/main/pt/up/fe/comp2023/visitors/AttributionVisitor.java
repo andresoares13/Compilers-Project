@@ -134,8 +134,16 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
                 (!l.getName().equals(symbolTable.getSuper()) || !r.getName().equals(symbolTable.getClassName())) &&
                 !(l.isArray() && r.getName().equals("int") && r.isArray())){
 
+            if (atribution.getJmmChild(0).getKind().equals("FuncOp") &&
+                    !symbolTable.getMethods().contains(atribution.getJmmChild(0).get("name")) &&
+                    !symbolTable.getSuper().equals("") && symbolTable.getImports().contains(symbolTable.getSuper()) &&
+                    r.getName().equals(symbolTable.getClassName())){
 
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
+            }
+            else{
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in attribuition: assignee is not compatible with the assigned"));
+            }
+
 
 
 

@@ -279,8 +279,17 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                                 break;
                             }
                         }
+
                         if (!symbolTable.getImports().contains(callerType.getName())) {
-                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error: invalid return type on method " + methodDeclaration.get("name") + " method not declared or imported"));
+                            if ((callerType.getName().equals(symbolTable.getClassName()) &&
+                                !symbolTable.getMethods().contains(methodDeclaration.getJmmChild(numOfChildren).get("name")))){
+
+                            }
+                            else{
+
+                                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error: invalid return type on method " + methodDeclaration.get("name") + " method not declared or imported"));
+                            }
+
                         }
                     } else {
 
