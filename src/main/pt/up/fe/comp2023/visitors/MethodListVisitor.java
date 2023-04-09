@@ -156,6 +156,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
 
 
         if (methodCall.getChildren().size() > 1){
+
             for(int i = 1; i < methodCall.getChildren().size(); i++){
                 Type argType = new Type("", false);
 
@@ -188,14 +189,25 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                         break;
                     }
                 }
-                int argLine = 1;//Integer.valueOf(methodCall.getJmmChild(1).getJmmChild(i).get("line"));
-                int argCol = 1;//Integer.valueOf(methodCall.getJmmChild(1).getJmmChild(i).get("col"));
+
                 List<Symbol> params = symbolTable.getParameters(methodCall.get("name"));
 
-                if(!params.get(i-1).getType().equals(argType)) {
 
-                    reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Error on method " + methodCall.get("name") + ": invalid method call, types of parameters are invalid. Parameter " + params.get(i-1).getName() + " expected " + params.get(i-1).getType().getName() + " but got " + argType.getName()));
+                if (params.size() == methodCall.getChildren().size() - 1){
+                    int argLine = Integer.valueOf(methodCall.getJmmChild(i).get("lineStart"));
+                    int argCol = Integer.valueOf(methodCall.getJmmChild(i).get("colStart"));
+                    if(!params.get(i-1).getType().equals(argType)) {
+
+                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Error on method " + methodCall.get("name") + ": invalid method call, types of parameters are invalid. Parameter " + params.get(i-1).getName() + " expected " + params.get(i-1).getType().getName() + " but got " + argType.getName()));
+                    }
                 }
+
+            }
+
+            if (symbolTable.getParameters(methodCall.get("name")).size() < methodCall.getChildren().size() - 1){
+                int argLine = Integer.valueOf(methodCall.get("lineStart"));
+                int argCol = Integer.valueOf(methodCall.get("colStart"));
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Wrong Number of Parameters on method " + methodCall.get("name")));
             }
         }
 
@@ -231,6 +243,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                 }
 
                 default: {
+
                     type = visit(methodDeclaration.getJmmChild(numOfChildren));
                     break;
                 }
