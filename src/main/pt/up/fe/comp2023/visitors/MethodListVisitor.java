@@ -131,7 +131,7 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
             if (!imported && (!symbolTable.getClassName().equals(name) || symbolTable.getSuper().equals(""))){
                 VariableSemanticVisitor variableVisitor = new VariableSemanticVisitor(symbolTable);
                 Type v = variableVisitor.visit(methodCall.getJmmChild(0),0);
-                if (!v.getName().equals(symbolTable.getSuper())){
+                if (!(v.getName().equals(symbolTable.getSuper()) && symbolTable.getImports().contains(symbolTable.getSuper()))){
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error on method " + methodCall.get("name") + ": Method Undeclared"));
                 }
 
