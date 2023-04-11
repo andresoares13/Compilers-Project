@@ -31,10 +31,12 @@ public class MethodDefinitionGenerator {
         }
 
 
-        // .limit stack 99 (for now)
-        methodDefinition.append("\t.limit stack 99").append("\n");
-        // .limit locals 99 (for now)
-        methodDefinition.append("\t.limit locals 99").append("\n");
+        if(!method.isConstructMethod()) {
+            // .limit stack 99 (for now)
+            methodDefinition.append("\t.limit stack 99").append("\n");
+            // .limit locals 99 (for now)
+            methodDefinition.append("\t.limit locals 99").append("\n");
+        }
 
         methodDefinition.append(instructions);
 
