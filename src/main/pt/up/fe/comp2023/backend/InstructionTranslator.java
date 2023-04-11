@@ -30,13 +30,16 @@ public class InstructionTranslator {
         return instructionTranslated.toString();
     }
 
-    // CALL (not finished -> probably needs some fixes)
+    // CALL (is pop necessary when return value not used, or simply we do not insert a store)
     public String translateInstruction(CallInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         StringBuilder parameters = new StringBuilder();
         CallType callType = instruction.getInvocationType();
         Operand caller = (Operand) instruction.getFirstArg();
         LiteralElement methodName = (LiteralElement) instruction.getSecondArg();
+        System.out.println(instruction.getListOfOperands());
+
+        boolean pop = false;
 
         switch (callType) {
             case invokestatic:
@@ -47,6 +50,7 @@ public class InstructionTranslator {
                 } else if(callType == CallType.invokespecial) {
                     if(!caller.getName().equals("this")){
                         jasminInstruction.append(getCorrespondingStore(caller, method)).append("\n");
+                        pop = true;
                     }
                     jasminInstruction.append(getCorrespondingLoad(caller, method)).append("\n");
                 }
@@ -84,6 +88,17 @@ public class InstructionTranslator {
                 jasminInstruction.append("/").append(JasminUtils.trimLiteral(methodName.getLiteral()));
                 jasminInstruction.append("(").append(parameters).append(")");
                 jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
+
+                if(callType == CallType.invokevirtual){
+                    if(instruction.getReturnType().getTypeOfElement() != ElementType.VOID) {
+                        // if return value not used, append pop
+                        // todo
+                    }
+                } else if(callType == CallType.invokespecial) {
+                    if(!method.isConstructMethod() && pop) {
+                        jasminInstruction.append("\n").append(getIndentation()).append("pop");
+                    }
+                }
                 break;
             case invokeinterface:
                 for(Element element: instruction.getListOfOperands()) {
@@ -133,9 +148,8 @@ public class InstructionTranslator {
         return getIndentation() + "goto " + instruction.getLabel();
     }
 
-    // NOPER (not finished -> questions)
+    // NOPER
     public String translateInstruction(SingleOpInstruction instruction, Method method) {
-        // what about the dup/pop/swap/etc.? Where should they be handled?
         return getCorrespondingLoad(instruction.getSingleOperand(), method);
     }
 
@@ -166,15 +180,10 @@ public class InstructionTranslator {
         return translateInstruction(rhs, method) + "\n" + getCorrespondingStore(dest, method);
     }
 
-    // BRANCH (not finished -> questions)
+    // BRANCH (if the condition is a binary instruction, and we just need an ifne + label)
     public String translateInstruction(CondBranchInstruction instruction, Method method) {
-        StringBuilder jasminInstruction = new StringBuilder();
-
-        jasminInstruction.append(translateInstruction(instruction.getCondition(), method)).append("\n");
-        // how to get the others operators??
-        jasminInstruction.append(getIndentation()).append("ifne").append("\n");
-
-        return jasminInstruction.toString();
+        return translateInstruction(instruction.getCondition(), method) + "\n" +
+                getIndentation() + "ifne " + instruction.getLabel();
     }
 
     // RETURN
@@ -270,7 +279,7 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    // UNARYOPER (not finished -> questions)
+    // UNARYOPER (how to implement "not")
     public String translateInstruction(UnaryOpInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
@@ -279,17 +288,22 @@ public class InstructionTranslator {
 
         jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
 
-        switch (operationType) { // what about the rest? Are they important?
+        switch (operationType) {
             case NOT -> jasminInstruction.append("not\n");
             case NOTB -> jasminInstruction.append("notb\n");
-            default -> {
-            }
+            default -> {}
         }
+
+        // can be like this??
+        //iload a
+        //iconst_m1
+        //ixor
+        //istore a
 
         return jasminInstruction.toString();
     }
 
-    // BINARYOPER (not finished -> questions)
+    // BINARYOPER (need to implement all of the operations?)
     public String translateInstruction(BinaryOpInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
@@ -315,9 +329,6 @@ public class InstructionTranslator {
             case DIV:
                 jasminInstruction.append("idiv");
                 break;
-            case LTH:
-                // todo
-                break;
             case AND, ANDB:
                 jasminInstruction.append("iand");
                 break;
@@ -325,10 +336,18 @@ public class InstructionTranslator {
                 jasminInstruction.append("ior");
                 break;
             case EQ:
+            case NEQ:
+            case GTH:
+            case GTE:
+            case LTH:
+            case LTE:
+            case SHR:
+            case SHRR:
+            case SHL:
+            case XOR:
                 // todo
                 break;
             default:
-                // more to implement
                 break;
         }
         return jasminInstruction.toString();
