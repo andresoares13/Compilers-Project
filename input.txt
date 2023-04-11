@@ -1,23 +1,9 @@
-class CallToUndeclaredMethod {
+import io;
+
+class B {
 
 
+	public static void main(String[] args){
 
-
-    public static void main(String[] args) {
-
-    }
-
-    public int foo(boolean p,boolean l) {
-        CallToUndeclaredMethod a;
-        a = new CallToUndeclaredMethod();
-
-
-        a.b(p,l);
-
-        return 0;
-    }
-
-    public int b(int c, int l){
-        return 0;
-    }
+	}
 }

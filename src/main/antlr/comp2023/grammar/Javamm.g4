@@ -30,7 +30,7 @@ varDeclaration
 
 methodDeclaration
     : ('public')? type name=ID '(' ( param ( ',' param )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
-    | ('public')? 'static' 'void' 'main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
+    | ('public')? 'static' 'void' name='main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
     ;
 
 param

@@ -30,6 +30,7 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         addVisit("Identifier", this::visitId);
         addVisit("This", this::visitThisExpr);
         addVisit("NegationOp", this::visitNotExpr);
+        setDefaultVisit(this::defaultVisitor);
     }
 
     private Type visitNotExpr(JmmNode visitNotExpr, Integer dummy) {
@@ -39,9 +40,22 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         int col = 1;//Integer.valueOf(visitNotExpr.get("col"));
 
         switch(visitNotExpr.getJmmChild(0).getKind()) {
-            case "BinaryOp": {
+            case "BinaryOp":
+            case "ParOp":{
                 BinaryExpressionVisitor binOpSemanticVisitor = new BinaryExpressionVisitor(symbolTable);
                 r = binOpSemanticVisitor.visit(visitNotExpr.getJmmChild(0),0);
+                break;
+            }
+            case "IndexOp":
+            case "LengthOp":{
+                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                r = indexingSemanticVisitor.visit(visitNotExpr.getJmmChild(0), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                r = methodSemanticVisitor.visit(visitNotExpr.getJmmChild(0), 0);
                 break;
             }
 
@@ -52,6 +66,7 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         }
 
         if (!r.getName().equals("boolean")) {
+            System.out.println(visitNotExpr.getChildren());
             Report report = new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Not operation can only be applied to boolean types");
             reports.add(report);
         }
@@ -61,16 +76,21 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
 
     private Type visitThisExpr(JmmNode visitThisExpr, Integer dummy) {
         JmmNode parent = visitThisExpr.getJmmParent();
-        Integer line = Integer.valueOf(visitThisExpr.get("line"));
-        Integer col = Integer.valueOf(visitThisExpr.get("col"));
-        while(!parent.getKind().equals("MethodDeclaration") && !parent.getKind().equals("ImportDeclaration")) {
+
+
+        Integer line = 1;//Integer.valueOf(visitThisExpr.get("line"));
+        Integer col = 1;//Integer.valueOf(visitThisExpr.get("col"));
+        while(!parent.getKind().equals("MethodDeclare") && !parent.getKind().equals("ImportDeclare") && !parent.getKind().equals("MethodDeclareMain")) {
+
+            if (parent.getJmmParent() == null){
+                break;
+            }
             parent = parent.getJmmParent();
         }
-        if (parent.getKind().equals("MethodDeclaration")) {
-            if (parent.get("name").equals("main")) {
-                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,
-                        "This keyword cannot be used in main method"));
-            }
+
+        if (parent.getKind().equals("MethodDeclareMain")) {
+            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,
+                    "This keyword cannot be used in main method"));
         }
         return new Type(this.symbolTable.getClassName(), false);
     }
@@ -87,6 +107,19 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
                 varType = binOpSemanticVisitor.visit(newIntArrVarAttribution.getJmmChild(0),0);
                 break;
             }
+            case "IndexOp":
+            case "LengthOp":{
+                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                varType = indexingSemanticVisitor.visit(newIntArrVarAttribution.getJmmChild(0), 0);
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                varType = methodSemanticVisitor.visit(newIntArrVarAttribution.getJmmChild(0), 0);
+                break;
+            }
+
 
             default:{
                 varType = visit(newIntArrVarAttribution.getJmmChild(0));
@@ -94,6 +127,7 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
             }
         }
         Integer line = 1;//Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("line"));
+
         Integer col = 1;//Integer.valueOf(newIntArrVarAttribution.getJmmChild(0).get("col"));
         if (varType.getName() != "int") {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col,
@@ -107,23 +141,41 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
         int line = 1;//Integer.valueOf(id.get("line"));
         int col = 1;//Integer.valueOf(id.get("col"));
 
-        List<String> methods = symbolTable.getMethods();
-        for (int i=0;i<methods.size();i++){
-            List<Symbol> tempSymbolListPar = symbolTable.getParameters(methods.get(i));
-            List<Symbol> tempSymbolListVar = symbolTable.getLocalVariables(methods.get(i));
-            for (int k=0;k<tempSymbolListPar.size();k++){
+        JmmNode parent = id;
 
-                if (tempSymbolListPar.get(k).getName().equals(name)){
-                    return  tempSymbolListPar.get(k).getType();
+        if (id.getJmmParent() != null){
+            while(!parent.getKind().equals("MethodDeclare") && !parent.getKind().equals("ImportDeclare") && !parent.getKind().equals("MethodDeclareMain")) {
+                if (parent.getJmmParent() == null){
+                    break;
                 }
-            }
-            for (int k=0;k<tempSymbolListVar.size();k++){
-
-                if (tempSymbolListVar.get(k).getName().equals(name)){
-                    return  tempSymbolListVar.get(k).getType();
-                }
+                parent = parent.getJmmParent();
             }
         }
+
+
+        List<String> methods = symbolTable.getMethods();
+
+        List<Symbol> tempSymbolListPar = symbolTable.getParameters(parent.get("name"));
+        List<Symbol> tempSymbolListVar = symbolTable.getLocalVariables(parent.get("name"));
+        for (int k=0;k<tempSymbolListPar.size();k++){
+
+            if (tempSymbolListPar.get(k).getName().equals(name)){
+                return  tempSymbolListPar.get(k).getType();
+            }
+        }
+        for (int k=0;k<tempSymbolListVar.size();k++){
+
+            if (tempSymbolListVar.get(k).getName().equals(name)){
+                return  tempSymbolListVar.get(k).getType();
+            }
+        }
+
+        for (int k=0;k<symbolTable.getFields().size();k++){
+            if (symbolTable.getFields().get(k).getName().equals(name)){
+                return symbolTable.getFields().get(k).getType();
+            }
+        }
+
 
 
         return new Type("none", false);
@@ -135,6 +187,14 @@ public class VariableSemanticVisitor extends PreorderJmmVisitor<Integer, Type> {
 
     private Type visitBooleanType(JmmNode booleanType, Integer dummy) {
         return new Type("boolean", false);
+    }
+
+
+    private Type defaultVisitor(JmmNode node, Integer temp){
+        for (JmmNode child : node.getChildren()) {
+            visit(child, 0);
+        }
+        return new Type("",false);
     }
 
     public List<Report> getReports() {

@@ -57,14 +57,29 @@ public class ConditionalStatementVisitor extends PreorderJmmVisitor<Integer, Typ
                 type = indexingSemanticVisitor.visit(ifStatement.getJmmChild(0), 0);
                 break;
             }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                type = methodSemanticVisitor.visit(ifStatement.getJmmChild(0), 0);
+                break;
+            }
 
             default:{
                 type = visit(ifStatement.getJmmChild(0));
                 break;
             }
         }
-        int line = 1;//Integer.valueOf(ifStatement.getJmmChild(0).get("line"));
-        int col = 1;//Integer.valueOf(ifStatement.getJmmChild(0).get("col"));
+        int line = Integer.valueOf(ifStatement.getJmmChild(0).get("lineStart"));
+        int col = Integer.valueOf(ifStatement.getJmmChild(0).get("colStart"));
+
+        if (ifStatement.getJmmChild(0).getKind().equals("FuncOp")){
+            if (ifStatement.getJmmChild(0).getJmmChild(0).getKind().equals("BinaryOp")){
+                BinaryExpressionVisitor bVisitor = new BinaryExpressionVisitor(symbolTable);
+                type = bVisitor.visit(ifStatement.getJmmChild(0).getJmmChild(0),0);
+            }
+        }
+
+
         if(!type.getName().equals("boolean")) {
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in IfStatement: condition has to be of type boolean"));
         }
@@ -99,8 +114,30 @@ public class ConditionalStatementVisitor extends PreorderJmmVisitor<Integer, Typ
                 break;
             }
             case "IndexOp":{
-                IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
-                type = indexingSemanticVisitor.visit(whileStatement.getJmmChild(0), 0);
+                //IndexLengthVisitor indexingSemanticVisitor = new IndexLengthVisitor(symbolTable);
+                //type = indexingSemanticVisitor.visit(whileStatement.getJmmChild(0), 0);
+                VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
+                Type type2 = variableSemanticVisitor.visit(whileStatement.getJmmChild(0).getJmmChild(0).getJmmChild(0),0);
+                Type type3 = variableSemanticVisitor.visit(whileStatement.getJmmChild(0).getJmmChild(0).getJmmChild(1),0);
+                Type type4 = variableSemanticVisitor.visit(whileStatement.getJmmChild(0).getJmmChild(1),0);
+                if (type2.getName().equals("int") && type3.isArray() && whileStatement.getJmmChild(0).getJmmChild(0).get("op").equals("<") && type4.getName().equals("int")){
+                    type = new Type("boolean",false);
+                }
+                break;
+            }
+            case "MethodDeclare":
+            case "FuncOp":{
+                MethodListVisitor methodSemanticVisitor = new MethodListVisitor(symbolTable);
+                type = methodSemanticVisitor.visit(whileStatement.getJmmChild(0), 0);
+                break;
+            }
+            case "LengthOp":{
+                VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
+                Type type2 = variableSemanticVisitor.visit(whileStatement.getJmmChild(0).getJmmChild(0).getJmmChild(0),0);
+                Type type3 = variableSemanticVisitor.visit(whileStatement.getJmmChild(0).getJmmChild(0).getJmmChild(1),0);
+                if (type2.getName().equals("int") && type3.isArray() && whileStatement.getJmmChild(0).getJmmChild(0).get("op").equals("<")){
+                    type = new Type("boolean",false);
+                }
                 break;
             }
 
@@ -112,6 +149,8 @@ public class ConditionalStatementVisitor extends PreorderJmmVisitor<Integer, Typ
         int line = 1;//Integer.valueOf(whileStatement.getJmmChild(0).get("line"));
         int col = 1;//Integer.valueOf(whileStatement.getJmmChild(0).get("col"));
         if(!type.getName().equals("boolean")) {
+            System.out.println(type);
+            System.out.println(whileStatement.getChildren());
             reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Error in WhileStatement: condition has to be of type boolean"));
         }
         else if(type.isArray() || type.getName().equals("intArr")) {
