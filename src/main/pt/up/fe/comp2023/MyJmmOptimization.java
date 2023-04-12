@@ -4,6 +4,7 @@ import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
+import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.report.Report;
@@ -34,14 +35,14 @@ public class MyJmmOptimization implements JmmOptimization {
                 codeBuilder.append("\t.construct "+st.getClassName()+"().V {\n" +
                         "\t\tinvokespecial(this, \"<init>\").V;\n" +
                     "\t}\n\n");
-        for(String s :st.getMethods()){
+        for(String methodName :st.getMethods()){
             codeBuilder.append(
                     "\t.method ");
-            if(st.getMethodIsPublic(s))
+            if(st.getMethodIsPublic(methodName))
                 codeBuilder.append("public ");
-            codeBuilder.append(s+"(");
+            codeBuilder.append(methodName+"(");
             boolean first=true;
-            for(Symbol p:st.getParameters(s)){
+            for(Symbol p:st.getParameters(methodName)){
                 if(first)
                     first=false;
                 else
@@ -49,10 +50,13 @@ public class MyJmmOptimization implements JmmOptimization {
                 codeBuilder.append(p.getName() + toOllirType(p.getType()));
             }
             codeBuilder.append(")");
-            codeBuilder.append(toOllirType(st.getReturnType(s)));
+            codeBuilder.append(toOllirType(st.getReturnType(methodName)));
             codeBuilder.append(" {\n");
             //method statements
             //TODO
+            JmmNode methodNode = getMethodNode(jmmSemanticsResult,methodName);
+            codeBuilder.append(methodVisitor(methodNode,jmmSemanticsResult, "\t"));
+
             codeBuilder.append("\t}\n");
         }
         codeBuilder.append("}\n");
@@ -87,5 +91,24 @@ public class MyJmmOptimization implements JmmOptimization {
                 sb.append("."+type.getName());
         }
         return sb.toString();
+    }
+    JmmNode getMethodNode(JmmSemanticsResult semanticsResult, String method ){
+        JmmNode root= semanticsResult.getRootNode();
+        for(JmmNode rootChild : root.getChildren()){
+            if(rootChild.getKind().equals("ClassDeclare")) {
+                for(JmmNode classNode : rootChild.getChildren()) {
+                    if(classNode.getKind().startsWith("MethodDeclare")){
+                        if(classNode.getJmmChild(0).get("name").equals(method))
+                            return classNode;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    String methodVisitor(JmmNode methodNode, JmmSemanticsResult semanticsResult, String indentation ){
+        for(JmmNode child : methodNode.getChildren()) {
+
+        }
     }
 }
