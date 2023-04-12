@@ -97,9 +97,12 @@ public class MyJmmOptimization implements JmmOptimization {
         for(JmmNode rootChild : root.getChildren()){
             if(rootChild.getKind().equals("ClassDeclare")) {
                 for(JmmNode classNode : rootChild.getChildren()) {
-                    if(classNode.getKind().startsWith("MethodDeclare")){
-                        if(classNode.getJmmChild(0).get("name").equals(method))
+                    if(classNode.getKind().equals("MethodDeclare")){
+                        if(classNode.get("name").equals(method))
                             return classNode;
+                    }
+                    if(method.equals("main") && classNode.getKind().equals("MethodDeclareMain")){
+                        return classNode;
                     }
                 }
             }
@@ -110,5 +113,6 @@ public class MyJmmOptimization implements JmmOptimization {
         for(JmmNode child : methodNode.getChildren()) {
 
         }
+        return "";
     }
 }
