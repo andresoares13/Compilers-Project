@@ -32,6 +32,10 @@ public class InstructionTranslator {
 
     // CALL (is pop necessary when return value not used, or simply we do not insert a store)
     public String translateInstruction(CallInstruction instruction, Method method) {
+        return dealWithCallInstruction(instruction, method, false);
+    }
+
+    public String dealWithCallInstruction(CallInstruction instruction, Method method, Boolean assign) {
         StringBuilder jasminInstruction = new StringBuilder();
         StringBuilder parameters = new StringBuilder();
         CallType callType = instruction.getInvocationType();
@@ -90,9 +94,8 @@ public class InstructionTranslator {
                 jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
 
                 if(callType == CallType.invokevirtual){
-                    if(instruction.getReturnType().getTypeOfElement() != ElementType.VOID) {
-                        // if return value not used, append pop
-                        // todo
+                    if(instruction.getReturnType().getTypeOfElement() != ElementType.VOID && !assign) {
+                        jasminInstruction.append("\n").append(getIndentation()).append("pop");
                     }
                 } else if(callType == CallType.invokespecial) {
                     if(!method.isConstructMethod() && pop) {
@@ -172,7 +175,7 @@ public class InstructionTranslator {
             if (callInstruction.getInvocationType() == CallType.NEW) {
                 ElementType elementType = callInstruction.getFirstArg().getType().getTypeOfElement();
                 if (elementType != ElementType.ARRAYREF) {
-                    return translateInstruction(rhs, method);
+                    return dealWithCallInstruction(callInstruction, method, true);
                 }
             }
         }
@@ -180,7 +183,7 @@ public class InstructionTranslator {
         return translateInstruction(rhs, method) + "\n" + getCorrespondingStore(dest, method);
     }
 
-    // BRANCH (if the condition is a binary instruction, and we just need an ifne + label)
+    // BRANCH (if the condition is a binary instruction, we just need an ifne + label)
     public String translateInstruction(CondBranchInstruction instruction, Method method) {
         return translateInstruction(instruction.getCondition(), method) + "\n" +
                 getIndentation() + "ifne " + instruction.getLabel();
@@ -303,7 +306,7 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    // BINARYOPER (need to implement all of the operations?)
+    // BINARYOPER (need to implement all the operations?)
     public String translateInstruction(BinaryOpInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
