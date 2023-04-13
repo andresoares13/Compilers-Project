@@ -30,7 +30,7 @@ varDeclaration
 
 methodDeclaration locals[boolean isPublic=false]
     : ('public' {$isPublic=true;} )? type name=ID '(' ( param ( ',' param )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
-    | ('public' {$isPublic=true;} )? 'static' 'void' 'main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
+    | ('public' {$isPublic=true;} )? 'static' 'void' name='main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
     ;
 
 param
