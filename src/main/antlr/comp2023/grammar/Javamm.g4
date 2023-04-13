@@ -55,15 +55,15 @@ statement
     ;
 
 expression
-    : expression op='&&' expression #BinaryOp
-    | expression op='<' expression #BinaryOp
-    | expression op=('+' | '-') expression #BinaryOp
-    | expression op=('*' | '/') expression #BinaryOp
+    : expression '.' name=ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
     | expression '[' expression ']' #IndexOp
     | expression '.' 'length' #LengthOp
-    | expression '.' name=ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
     | 'new' 'int' '[' expression ']' #NewArr
     | 'new' name=ID '(' ')' #NewFunc
+    | expression op=('*' | '/') expression #BinaryOp
+    | expression op=('+' | '-') expression #BinaryOp
+    | expression op='<' expression #BinaryOp
+    | expression op='&&' expression #BinaryOp
     | '!' expression #NegationOp
     | '(' expression ')' #ParOp
     | value=INTEGER #Integer

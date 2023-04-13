@@ -2,8 +2,12 @@ import io;
 
 class B {
 
-
+    int[] a;
 	public static void main(String[] args){
 
+
+        while (5 < a[1]){
+
+        }
 	}
 }
