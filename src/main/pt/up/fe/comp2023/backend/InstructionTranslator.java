@@ -41,7 +41,6 @@ public class InstructionTranslator {
         CallType callType = instruction.getInvocationType();
         Operand caller = (Operand) instruction.getFirstArg();
         LiteralElement methodName = (LiteralElement) instruction.getSecondArg();
-        System.out.println(instruction.getListOfOperands());
 
         boolean pop = false;
 
@@ -94,6 +93,7 @@ public class InstructionTranslator {
                 jasminInstruction.append(JasminUtils.translateType(method.getOllirClass(), instruction.getReturnType()));
 
                 if(callType == CallType.invokevirtual){
+                    System.out.println(assign);
                     if(instruction.getReturnType().getTypeOfElement() != ElementType.VOID && !assign) {
                         jasminInstruction.append("\n").append(getIndentation()).append("pop");
                     }
@@ -175,9 +175,10 @@ public class InstructionTranslator {
             if (callInstruction.getInvocationType() == CallType.NEW) {
                 ElementType elementType = callInstruction.getFirstArg().getType().getTypeOfElement();
                 if (elementType != ElementType.ARRAYREF) {
-                    return dealWithCallInstruction(callInstruction, method, true);
+                    return translateInstruction(rhs, method);
                 }
             }
+            return dealWithCallInstruction(callInstruction, method, true) + "\n" + getCorrespondingStore(dest, method);
         }
 
         return translateInstruction(rhs, method) + "\n" + getCorrespondingStore(dest, method);
