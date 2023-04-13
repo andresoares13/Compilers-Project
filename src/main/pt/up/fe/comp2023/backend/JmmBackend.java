@@ -20,13 +20,12 @@ public class JmmBackend implements JasminBackend {
         jasminCode.append(getClassDir(ollirClass)).append("\n");
         // getSuper
         jasminCode.append(getSuperDir(ollirClass)).append("\n");
-        //.implements are necessary?
         // getFields
         jasminCode.append(getFieldsDir(ollirClass)).append("\n");
         // getMethods
         jasminCode.append(getMethodsDir(ollirClass)).append("\n");
 
-        System.out.println(jasminCode.toString());
+        //System.out.println(jasminCode.toString());
 
         return new JasminResult(ollirResult, jasminCode.toString(), Collections.emptyList());
     }

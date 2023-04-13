@@ -30,7 +30,7 @@ public class InstructionTranslator {
         return instructionTranslated.toString();
     }
 
-    // CALL (is pop necessary when return value not used, or simply we do not insert a store)
+    // CALL
     public String translateInstruction(CallInstruction instruction, Method method) {
         return dealWithCallInstruction(instruction, method, false);
     }
@@ -184,7 +184,7 @@ public class InstructionTranslator {
         return translateInstruction(rhs, method) + "\n" + getCorrespondingStore(dest, method);
     }
 
-    // BRANCH (if the condition is a binary instruction, we just need an ifne + label)
+    // BRANCH
     public String translateInstruction(CondBranchInstruction instruction, Method method) {
         return translateInstruction(instruction.getCondition(), method) + "\n" +
                 getIndentation() + "ifne " + instruction.getLabel();
@@ -283,7 +283,7 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    // UNARYOPER (how to implement "not")
+    // UNARYOPER (as I want)
     public String translateInstruction(UnaryOpInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
@@ -307,7 +307,7 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    // BINARYOPER (need to implement all the operations?)
+    // BINARYOPER
     public String translateInstruction(BinaryOpInstruction instruction, Method method) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
@@ -339,16 +339,7 @@ public class InstructionTranslator {
             case OR, ORB:
                 jasminInstruction.append("ior");
                 break;
-            case EQ:
-            case NEQ:
-            case GTH:
-            case GTE:
             case LTH:
-            case LTE:
-            case SHR:
-            case SHRR:
-            case SHL:
-            case XOR:
                 // todo
                 break;
             default:
