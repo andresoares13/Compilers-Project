@@ -27,7 +27,6 @@ public class MyJmmOptimization implements JmmOptimization {
         for(String s:st.getImports()) {
             codeBuilder.append("import ").append(s).append(";\n");
         }
-        codeBuilder.append('\n');
         codeBuilder.append(st.getClassName()).append(st.getSuper().equals("") ? "" : " extends " + st.getSuper()).append(" {\n");
         for(Symbol v:st.getFields()){
             codeBuilder.append(".field private ").append(v.getName()).append(toOllirType(v.getType())).append(";\n");
@@ -50,10 +49,16 @@ public class MyJmmOptimization implements JmmOptimization {
         for(JmmNode methodNode : methodNodeList) {
             String methodName = methodNode.get("name");
             codeBuilder.append(".method ");
-            if(methodNode.get("isPublic").equals("true"))
+            if(methodNode.get("isPublic").equals("true")) {
                 codeBuilder.append("public ");
-            else
+            }
+            else {
                 codeBuilder.append("private ");
+            }
+
+            if(methodName.equals("main"))
+                codeBuilder.append("static ");
+
             codeBuilder.append(methodName).append("(");
             boolean first=true;
             for(Symbol p:st.getParameters(methodName)){
@@ -162,7 +167,7 @@ public class MyJmmOptimization implements JmmOptimization {
     }
     Pair<String,ArrayList<String>> expressionVisitor(JmmNode node, JmmSemanticsResult semanticsResult, Map<String, Triple<Boolean,Type,String>> localVarsState, String methodName){
         ArrayList<String> previousStatements = new ArrayList<>();
-        String result="0.i32";
+        String result="undefined";
         switch (node.getKind()){//TODO
             case "BinaryOp": {
                 Pair<String,ArrayList<String>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName),
@@ -187,9 +192,11 @@ public class MyJmmOptimization implements JmmOptimization {
                 Pair<String,ArrayList<String>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName),
                         exp2 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
                 if( ! getOllirType(exp2.a).getName().equals(".i32"))
-                    throw new RuntimeException("Non integer used as array index.");
+                    {result = "Non integer used as array index.";break;}
+                //throw new RuntimeException("Non integer used as array index.");
                 if(! getOllirType(exp2.a).isArray())
-                    throw new RuntimeException("Using index operator[] on a non array.");
+                    {result = "Using index operator[] on a non array.";break;}
+                    //throw new RuntimeException("Using index operator[] on a non array.");
                 previousStatements = exp1.b;
                 previousStatements.addAll(exp2.b);
                 result = exp1.a + "["+exp2.a+"].i32";
@@ -202,9 +209,60 @@ public class MyJmmOptimization implements JmmOptimization {
                 break;
             }
             case "FuncOp":{ //TODO
-                switch(node.getJmmChild(0).getKind()){
+                var calledExpression = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
+                String invokeType, returnType, target = calledExpression.a;
+                List<String> arguments = new ArrayList<>();
+                if(calledExpression.a.equals("this")){
+                    var calledMethod = getMethodNode(semanticsResult,node.get("name"));
+                    if(calledMethod == null){
+                        result = "Method does not exist";
+                        break;
+                        //throw new RuntimeException("Method does not exist");
+                    }
+                    if(calledMethod.get("isPublic").equals("true")){
+                        invokeType = "virtual";
+                    }else{
+                        invokeType = "special";
+                    }
+                    returnType = toOllirType(semanticsResult.getSymbolTable().getReturnType(node.get("name")));
+                }else {
+                    Type idType = getOllirType(calledExpression.a);
+                    if(idType.isArray()) {
+                        //throw new RuntimeException("Calling function of array");
+                        result = "Calling function of array";break;
+                    }
+                    switch(idType.getName()){
+                        case "int":
+                        case "boolean":
+                            //thow new RuntimeException("Calling function of a primitive type);
+                        case "import":
+                            invokeType="static";
+                            returnType = ".V";
+                            target = target.substring(0,target.indexOf('.'));
+                            break;
+                        default:
+                            invokeType="virtual";
+                            returnType = ".V";
+                            break;
+
+                    }
+                    /*
+                        if(is var)
+                            virtual(var.type,name)
+                        else(is import)
+                            static(import, name
+                     */
+                }
+                previousStatements = calledExpression.b;
+                for(int i =1;i<node.getChildren().size();++i){
+                    var expressionResult = expressionVisitor(node.getJmmChild(i),semanticsResult,localVarsState,methodName);
+                    previousStatements.addAll(expressionResult.b);
+                    arguments.add(expressionResult.a);
+                }
+                result = "invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + returnType;
+                /*switch(node.getJmmChild(0).getKind()){
                     case "This": { //TODO check arguments match?
-                        StringBuilder arguments = new StringBuilder();
+
                         for(int i =1;i<node.getChildren().size();++i){
                             var expressionResult = expressionVisitor(node.getJmmChild(i),semanticsResult,localVarsState,methodName);
                             previousStatements.addAll(expressionResult.b);
@@ -239,21 +297,23 @@ public class MyJmmOptimization implements JmmOptimization {
                     case "LengthOp":
                     case "BinaryOp":
                         throw new RuntimeException("Invalid target for new keyword.");
-                }
+                }*/
                 break;
             }
             case "NewArr":break;
             case "NewFunc": {
                 var tmp = addTemporaryVariable(localVarsState, new Type(node.get("name"), false));
                 previousStatements.add(tmp.c + toOllirType(tmp.b) + " :=" + toOllirType(tmp.b) + " new(" + tmp.b.getName() + ")" + toOllirType(tmp.b) + ";\n");
-                previousStatements.add("invokespecial(" + tmp.c + toOllirType(tmp.b) + "\"<init>\").V;\n");
+                previousStatements.add("invokespecial(" + tmp.c + toOllirType(tmp.b) + ", \"<init>\").V;\n");
                 result = tmp.c + toOllirType(tmp.b);
                 break;
             }
             case "NegationOp": {
                 var expression = expressionVisitor(node.getJmmChild(0), semanticsResult, localVarsState, methodName);
-                if( ! getOllirType(expression.a).getName().equals(".bool"))
-                    throw new RuntimeException("Negation operator on a non boolean.");
+                if( ! getOllirType(expression.a).getName().equals(".bool")){
+                    result = "Negation operator on a non boolean.";break;
+                    //throw new RuntimeException("Negation operator on a non boolean.");
+                }
                 var tmp = addTemporaryVariable(localVarsState, getOllirType(expression.a));
                 previousStatements = expression.b;
                 previousStatements.add(tmp.c + ".bool" + " !=.bool " + expression.a + ";\n");
@@ -269,10 +329,12 @@ public class MyJmmOptimization implements JmmOptimization {
                 var varState = getVariableState(node.get("value"), localVarsState);
                 if(varState== null){ //check imports
                     var imported = semanticsResult.getSymbolTable().getImports().stream().filter((String n)-> n.equals(node.get("value"))).findFirst();
-                    if(imported.isEmpty())
-                        throw new RuntimeException("Undeclared identifier.");
+                    if(imported.isEmpty()) {
+                        result = "Undeclared identifier.";break;
+                        //throw new RuntimeException("Undeclared identifier.");
+                    }
                     else
-                        result = imported.get() + ".static";
+                        result = imported.get() + ".import";
                     break;
                 }
                 if (varState.a) { //is Field
@@ -296,6 +358,8 @@ public class MyJmmOptimization implements JmmOptimization {
                 result = node.get("value")+".bool";
                 break;
         }
+        if(result.equals("undefined"))
+            result = "node:[" + node.getKind() + "]";
         return new Pair<>(result,previousStatements);
     }
     String methodVisitor(JmmNode methodNode, JmmSemanticsResult semanticsResult){
@@ -321,15 +385,17 @@ public class MyJmmOptimization implements JmmOptimization {
                     for (String s : expression.b)
                         stringBuilder.append(s);
                     stringBuilder.append(state.c).append(toOllirType(state.b)).append(" :=").append(toOllirType(state.b)).append(" ").append(expression.a).append(";\n");
-                    if(! (getOllirType(expression.a).getName().equals(state.b.getName()) && getOllirType(expression.a).isArray() == state.b.isArray()))
-                        throw new RuntimeException("Assigning mismatching type.");
+
+                    //if(! (getOllirType(expression.a).getName().equals(state.b.getName()) && getOllirType(expression.a).isArray() == state.b.isArray()))
+                        //throw new RuntimeException("Assigning mismatching type.");
                     break;
                 }
                 case "SemiColon": {
-                    var statements = expressionVisitor(child,semanticsResult,localVarsState,methodName);
+                    var statements = expressionVisitor(child.getJmmChild(0),semanticsResult,localVarsState,methodName);
                     for(String s : statements.b)
                         stringBuilder.append(s);
-                    stringBuilder.append(statements.a).append(";\n");
+                    if(!statements.a.equals(""))
+                        stringBuilder.append(statements.a).append(";\n");
                     break;
                 }
                 case "Brackets": {
