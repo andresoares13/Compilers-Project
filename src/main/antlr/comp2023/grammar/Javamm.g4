@@ -28,9 +28,9 @@ varDeclaration
     : type name=ID ';' #VarDeclare
     ;
 
-methodDeclaration
-    : ('public')? type name=ID '(' ( param ( ',' param )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
-    | ('public')? 'static' 'void' name='main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
+methodDeclaration locals[boolean isPublic=false]
+    : ('public' {$isPublic=true;} )? type name=ID '(' ( param ( ',' param )* )? ')' '{' ( varDeclaration)* ( statement )* 'return' expression ';' '}' #MethodDeclare
+    | ('public' {$isPublic=true;} )? 'static' 'void' name='main' '(' 'String' '[' ']' parameter=ID ')' '{' ( varDeclaration)* ( statement )* '}' #MethodDeclareMain
     ;
 
 param

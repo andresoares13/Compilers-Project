@@ -1,0 +1,21 @@
+import io;
+
+class Fac{
+    public static void main(String[] args) {
+		Fac f;
+		int i;
+        f = new Fac();
+		i = f.compFac(10);
+		io.printLn(i);
+	}
+	public int compFac(int n){
+        int ret;
+        ret= 0;
+        if(n<1){
+            ret = n * this.compFac(n-1);
+        }else{
+            ret = 1;
+        }
+        return ret;
+    }
+}
