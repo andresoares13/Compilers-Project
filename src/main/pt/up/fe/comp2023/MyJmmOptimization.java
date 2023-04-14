@@ -255,7 +255,7 @@ public class MyJmmOptimization implements JmmOptimization {
             case "NewArr":break;
             case "NewFunc": {
                 var tmp = addTemporaryVariable(localVarsState, new Type(node.get("name"), false));
-                previousStatements.add(tmp.c + toOllirType(tmp.b) + " :=." + toOllirType(tmp.b) + " new(" + tmp.b.getName() + ")" + toOllirType(tmp.b) + ";\n");
+                previousStatements.add(tmp.c + toOllirType(tmp.b) + " :=" + toOllirType(tmp.b) + " new(" + tmp.b.getName() + ")" + toOllirType(tmp.b) + ";\n");
                 previousStatements.add("invokespecial(" + tmp.c + toOllirType(tmp.b) + "\"<init>\").V;\n");
                 result = tmp.c + toOllirType(tmp.b);
                 break;
@@ -288,7 +288,7 @@ public class MyJmmOptimization implements JmmOptimization {
                 if (varState.a) { //is Field
                     result = "getfield(this," + varState.b.c + toOllirType(varState.b.b) + ")" + toOllirType(varState.b.b);
                 } else {
-                    if (varState.b.a) { //not initialized
+                    if (!varState.b.a) { //not initialized
                         previousStatements.add(
                                 varState.b.c + toOllirType(varState.b.b)
                                         + " :=" + toOllirType(varState.b.b)
@@ -300,7 +300,7 @@ public class MyJmmOptimization implements JmmOptimization {
                 break;
             }
             case "This":
-                result = "this";// + toOllirType(semanticsResult.getSymbolTable().getClassName()); //TODO confirm
+                result = "this";
                 break;
             case "Bool":
                 result = node.get("value")+".bool";
