@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Triple;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
+import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
@@ -11,6 +12,7 @@ import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.report.Report;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MyJmmOptimization implements JmmOptimization {
     private  Map<String, Triple<Boolean,Type,String>> fieldsState = new HashMap<>();
@@ -23,7 +25,7 @@ public class MyJmmOptimization implements JmmOptimization {
     public OllirResult toOllir(JmmSemanticsResult jmmSemanticsResult) {
         StringBuilder codeBuilder = new StringBuilder();
         List< Report > reports = new ArrayList<>();
-        SymbolTableStore st = (SymbolTableStore) jmmSemanticsResult.getSymbolTable();
+        SymbolTable st = jmmSemanticsResult.getSymbolTable();
         for(String s:st.getImports()) {
             codeBuilder.append("import "+s+";\n");
         }
@@ -36,12 +38,15 @@ public class MyJmmOptimization implements JmmOptimization {
         }
                 codeBuilder.append(".construct "+st.getClassName()+"().V {\n" +
                         "invokespecial(this, \"<init>\").V;\n" +
-                    "}\n\n");
-        for(String methodName :st.getMethods()){
+                    "}\n");
+        for(JmmNode methodNode : jmmSemanticsResult.getRootNode().getChildren().stream().filter((n)->n.getKind().equals("ClassDeclare")).findFirst().get().getChildren().stream().filter((m)->m.getKind().startsWith("MethodDeclare")).collect(Collectors.toList())) {
+            String methodName = methodNode.get("name");
             codeBuilder.append(
                     ".method ");
-            if(st.getMethodIsPublic(methodName))
+            if(methodNode.get("isPublic").equals("true"))
                 codeBuilder.append("public ");
+            else
+                codeBuilder.append("private ");
             codeBuilder.append(methodName+"(");
             boolean first=true;
             for(Symbol p:st.getParameters(methodName)){
@@ -54,9 +59,7 @@ public class MyJmmOptimization implements JmmOptimization {
             codeBuilder.append(")");
             codeBuilder.append(toOllirType(st.getReturnType(methodName)));
             codeBuilder.append(" {\n");
-            //method statements
-            //TODO
-            JmmNode methodNode = getMethodNode(jmmSemanticsResult,methodName);
+
             codeBuilder.append(methodVisitor(methodNode,jmmSemanticsResult));
 
             codeBuilder.append("}\n");
@@ -108,10 +111,12 @@ public class MyJmmOptimization implements JmmOptimization {
             return new Type("boolean",isArray);
         return new Type(end.substring(1),isArray);
     }
-    String getTypeDefaultValue(String type){
-        switch(type){
-            //TODO
-
+    String getTypeDefaultValue(Type type){
+        switch(type.getName()){
+            case "int":
+                return "0.i32";
+            case "boolean":
+                return "1.bool";
         }
         return "";
     }
@@ -144,8 +149,11 @@ public class MyJmmOptimization implements JmmOptimization {
             return new Pair(false, // not a field
                     local);
         var field = fieldsState.get(variableName);
-        return new Pair(true, // is a field
+        if(field!=null)
+            return new Pair(true, // is a field
                 field);
+        else
+            return null; //check if it's an import.
     }
     Triple<Boolean,Type,String> addTemporaryVariable(Map<String, Triple<Boolean,Type,String>> localVarsState, Type type){
         for(int i=0;;++i){
@@ -162,12 +170,6 @@ public class MyJmmOptimization implements JmmOptimization {
         String result="0.i32";
         switch (node.getKind()){//TODO
             case "BinaryOp": {
-                /*
-                : expression op='&&' expression #BinaryOp
-                | expression op='<' expression #BinaryOp
-                | expression op=('+' | '-') expression #BinaryOp
-                | expression op=('*' | '/') expression #BinaryOp
-                */
                 Pair<String,ArrayList<String>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName),
                         exp2 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
                 previousStatements = exp1.b;
@@ -187,19 +189,85 @@ public class MyJmmOptimization implements JmmOptimization {
                 result = tmp.c + toOllirType(tmp.b);
                 break;
             }
-            case "IndexOp":break;
-            case "LengthOp":break;
-            case "FuncOp":break;
-            case "NewArr":break;
-            case "NewFunc":
-                result = "new(" + node.get("name") + ")." + node.get("name");
+            case "IndexOp":{
+                Pair<String,ArrayList<String>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName),
+                        exp2 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
+                if( ! getOllirType(exp2.a).getName().equals(".i32"))
+                    throw new RuntimeException("Non integer used as array index.");
+                if(! getOllirType(exp2.a).isArray())
+                    throw new RuntimeException("Using index operator[] on a non array.");
+                previousStatements = exp1.b;
+                for(String s: exp2.b)
+                    previousStatements.add(s);
+                result = exp1.a + "["+exp2.a+"].i32";
                 break;
+            }
+            case "LengthOp": {
+                var expression = expressionVisitor(node.getJmmChild(0), semanticsResult, localVarsState, methodName);
+                previousStatements = expression.b;
+                result = "arraylength(" + expression.a + ").i32";
+                break;
+            }
+            case "FuncOp":{ //TODO
+                switch(node.getJmmChild(0).getKind()){
+                    case "This": { //TODO check arguments match?
+                        StringBuilder arguments = new StringBuilder();
+                        for(int i =1;i<node.getChildren().size();++i){
+                            var expressionResult = expressionVisitor(node.getJmmChild(i),semanticsResult,localVarsState,methodName);
+                            for(var s:expressionResult.b)
+                                previousStatements.add(s);
+                            arguments.append(", " + expressionResult.a);
+                        }
+                        result = "invokevirtual(this, \"" + node.get("name") + "\"" + arguments + ")" + toOllirType(semanticsResult.getSymbolTable().getReturnType(node.get("name")));
+                        break;
+                    }
+                    case "Identifier":
+                    case "NewFunc":{ //TODO check arguments match?
+                        StringBuilder arguments = new StringBuilder();
+                        var expression0 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
+                        for(var s:expression0.b)
+                            previousStatements.add(s);
+                        for(int i =1;i<node.getChildren().size();++i){
+                            var expressionResult = expressionVisitor(node.getJmmChild(i),semanticsResult,localVarsState,methodName);
+                            for(var s:expressionResult.b)
+                                previousStatements.add(s);
+                            arguments.append(", " + expressionResult.a);
+                        }
+                        result = "invokespecial("+ expression0.a + ", \"" + node.get("name") + "\"" + arguments + ")" + toOllirType(semanticsResult.getSymbolTable().getReturnType(node.get("name")));
+                        break;
+                    }
+                        //valid
+                    case "IndexOp":
+                    case "ParOp":
+                    case "FuncOp":
+                        break;
+                        //invalids
+                    case "Integer":
+                    case "Bool":
+                    case "NegationOp":
+                    case "NewArr":
+                    case "LengthOp":
+                    case "BinaryOp":
+                        throw new RuntimeException("Invalid target for new keyword.");
+                }
+                break;
+            }
+            case "NewArr":break;
+            case "NewFunc": {
+                var tmp = addTemporaryVariable(localVarsState, new Type(node.get("name"), false));
+                previousStatements.add(tmp.c + toOllirType(tmp.b) + " :=." + toOllirType(tmp.b) + " new(" + tmp.b.getName() + ")" + toOllirType(tmp.b) + ";\n");
+                previousStatements.add("invokespecial(" + tmp.c + toOllirType(tmp.b) + "\"<init>\").V;\n");
+                result = tmp.c + toOllirType(tmp.b);
+                break;
+            }
             case "NegationOp": {
                 var expression = expressionVisitor(node.getJmmChild(0), semanticsResult, localVarsState, methodName);
+                if( ! getOllirType(expression.a).getName().equals(".bool"))
+                    throw new RuntimeException("Negation operator on a non boolean.");
                 var tmp = addTemporaryVariable(localVarsState, getOllirType(expression.a));
                 previousStatements = expression.b;
-                previousStatements.add(tmp.c + toOllirType(tmp.b) + " :=" + toOllirType(tmp.b) + " " + expression.a + ";\n");
-                result = tmp.c + toOllirType(tmp.b);
+                previousStatements.add(tmp.c + ".bool" + " :=.bool " + expression.a + ";\n");
+                result = tmp.c + ".bool";
                 break;
             }
             case "ParOp":
@@ -209,22 +277,30 @@ public class MyJmmOptimization implements JmmOptimization {
                 break;
             case "Identifier": {
                 var varState = getVariableState(node.get("value"), localVarsState);
+                if(varState== null){ //check imports
+                    var imported = semanticsResult.getSymbolTable().getImports().stream().filter((n)->equals(node.get("value"))).findFirst();
+                    if(imported.isEmpty())
+                        throw new RuntimeException("Undeclared identifier.");
+                    else
+                        result = imported.get() + ".static";
+                    break;
+                }
                 if (varState.a) { //is Field
                     result = "getfield(this," + varState.b.c + toOllirType(varState.b.b) + ")" + toOllirType(varState.b.b);
                 } else {
-                    if (varState.a) { //not initialized
+                    if (varState.b.a) { //not initialized
                         previousStatements.add(
                                 varState.b.c + toOllirType(varState.b.b)
                                         + " :=" + toOllirType(varState.b.b)
-                                        + " " + getTypeDefaultValue(varState.b.b.getName()) + ";\n"
+                                        + " " + getTypeDefaultValue(varState.b.b) + ";\n"
                         );
                     }
-                    result = node.get("value") + toOllirType(varState.b.b);
+                    result = varState.b.c + toOllirType(varState.b.b);
                 }
                 break;
             }
             case "This":
-                result = "this."+semanticsResult.getSymbolTable().getClassName(); //TODO confirm
+                result = "this";// + toOllirType(semanticsResult.getSymbolTable().getClassName()); //TODO confirm
                 break;
             case "Bool":
                 result = node.get("value")+".bool";
@@ -239,10 +315,12 @@ public class MyJmmOptimization implements JmmOptimization {
             localVarsState.put(aVar.getName(), new Triple<>(false, aVar.getType(),aVar.getName()));
         for(int i=0; i<semanticsResult.getSymbolTable().getParameters(methodName).size() ;++i) {
             var aVar= semanticsResult.getSymbolTable().getParameters(methodName).get(i);
-            localVarsState.put(aVar.getName(), new Triple<>(true, aVar.getType(), "$"+i ));
+            localVarsState.put(aVar.getName(), new Triple<>(true, aVar.getType(), "$"+i+"."+aVar.getName()));
         }
         StringBuilder stringBuilder = new StringBuilder();
-        for(JmmNode child : methodNode.getChildren()) {
+        List<JmmNode> children = methodNode.getChildren();
+        for(int i=0; i< children.size();++i){
+            JmmNode child = children.get(i);
             switch (child.getKind()){//TODO
                 case "VarDeclareStatement": {
                     var state = localVarsState.get(child.get("name"));
@@ -252,12 +330,14 @@ public class MyJmmOptimization implements JmmOptimization {
                     var expression = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState,methodNode.get("name"));
                     for (String s : expression.b)
                         stringBuilder.append(s);
-                    String type = toOllirType(getMethodVariable(semanticsResult, methodName, child.get("name")).getType());
+                    //String type = toOllirType(getMethodVariable(semanticsResult, methodName, child.get("name")).getType());
                     stringBuilder.append(
-                            child.get("name") + type
-                            + " :=" + type
+                            state.c + toOllirType(state.b)
+                            + " :=" + toOllirType(state.b)
                             + " " + expression.a + ";\n"
                     );
+                    if(! (getOllirType(expression.a).getName().equals(state.b.getName()) && getOllirType(expression.a).isArray() == state.b.isArray()))
+                        throw new RuntimeException("Assigning mismatching type.");
                     break;
                 }
                 case "SemiColon": {
@@ -269,14 +349,17 @@ public class MyJmmOptimization implements JmmOptimization {
                     );
                     break;
                 }
-                case "Brackets":
+                case "Brackets": {
+                    List<JmmNode> unvisited = children.subList(i+1,children.size());
+                    unvisited.addAll(i+1,child.getChildren());
+                }
                 case "IfElseStatement":
                 case "WhileStatement":
                 case "ArrayAccess":
                     break;
 
 
-                //catch all expressions as the node is from the return statement.
+                //catch all 'expression' as this means the node is from the return statement.
                 case "BinaryOp":
                 case "IndexOp":
                 case "LengthOp":
