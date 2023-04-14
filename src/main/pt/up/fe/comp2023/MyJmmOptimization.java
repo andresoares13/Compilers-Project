@@ -29,7 +29,7 @@ public class MyJmmOptimization implements JmmOptimization {
         }
         codeBuilder.append(st.getClassName()).append(st.getSuper().equals("") ? "" : " extends " + st.getSuper()).append(" {\n");
         for(Symbol v:st.getFields()){
-            codeBuilder.append(".field private ").append(v.getName()).append(toOllirType(v.getType())).append(";\n");
+            codeBuilder.append(".field private ").append(v.getName()).append(typeToOllir(v.getType())).append(";\n");
             fieldsState.put(v.getName(), new Triple<>(false,v.getType(),v.getName()));
         }
         codeBuilder.append(".construct ").append(st.getClassName()).append("().V {\n").append("invokespecial(this, \"<init>\").V;\n").append("}\n");
@@ -66,10 +66,10 @@ public class MyJmmOptimization implements JmmOptimization {
                     first=false;
                 else
                     codeBuilder.append(", ");
-                codeBuilder.append(p.getName()).append(toOllirType(p.getType()));
+                codeBuilder.append(p.getName()).append(typeToOllir(p.getType()));
             }
             codeBuilder.append(")");
-            codeBuilder.append(toOllirType(st.getReturnType(methodName)));
+            codeBuilder.append(typeToOllir(st.getReturnType(methodName)));
             codeBuilder.append(" {\n");
 
             codeBuilder.append(methodVisitor(methodNode,jmmSemanticsResult));
@@ -88,7 +88,7 @@ public class MyJmmOptimization implements JmmOptimization {
         return JmmOptimization.super.optimize(ollirResult);
     }
 
-    String toOllirType(Type type){
+    String typeToOllir(Type type){
         StringBuilder sb=new StringBuilder();
         if(type.isArray())
             sb.append(".array");
@@ -101,14 +101,18 @@ public class MyJmmOptimization implements JmmOptimization {
         }
         return sb.toString();
     }
-    Type getOllirType(String s){
-        String end = s.substring(s.lastIndexOf('.'));
+    Type ollirToType(String s){
+        int lastPeriod = s.lastIndexOf('.'),
+                secondLastPeriod = s.lastIndexOf('.',lastPeriod-1);
         boolean isArray = false;
-        if(end.equals(".array")){
-            isArray=true;
-            end = s.substring(0,s.lastIndexOf('.'));
-            end = end.substring(end.lastIndexOf('.'));
+        if(lastPeriod == -1) {
+            throw new RuntimeException("String is not an Ollir Type.");
         }
+        if(secondLastPeriod != -1){
+            if(s.substring(secondLastPeriod,lastPeriod).equals(".array"))
+                isArray = true;
+        }
+        String end = s.substring(lastPeriod);
         if(end.equals(".i32"))
             return new Type("int",isArray);
         if(end.equals(".bool"))
@@ -171,7 +175,7 @@ public class MyJmmOptimization implements JmmOptimization {
         switch (node.getKind()){//TODO
             case "BinaryOp": {
                 Pair<String,ArrayList<String>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName),
-                        exp2 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
+                        exp2 = expressionVisitor(node.getJmmChild(1),semanticsResult,localVarsState,methodName);
                 previousStatements = exp1.b;
                 previousStatements.addAll(exp2.b);
                 String op = node.get("op");
@@ -182,19 +186,19 @@ public class MyJmmOptimization implements JmmOptimization {
                     opType = new Type("int",false);
                 var tmp = addTemporaryVariable(localVarsState,opType);
                 previousStatements.add(
-                        tmp.c + toOllirType(tmp.b) + " :=" + toOllirType(tmp.b) + " "
-                        + exp1.a + " " + op + toOllirType(opType) + " " + exp2.a + ";\n"
+                        tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) + " "
+                        + exp1.a + " " + op + typeToOllir(opType) + " " + exp2.a + ";\n"
                 );
-                result = tmp.c + toOllirType(tmp.b);
+                result = tmp.c + typeToOllir(tmp.b);
                 break;
             }
             case "IndexOp":{
                 Pair<String,ArrayList<String>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName),
                         exp2 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
-                if( ! getOllirType(exp2.a).getName().equals(".i32"))
+                if( ! ollirToType(exp2.a).getName().equals(".i32"))
                     {result = "Non integer used as array index.";break;}
                 //throw new RuntimeException("Non integer used as array index.");
-                if(! getOllirType(exp2.a).isArray())
+                if(! ollirToType(exp2.a).isArray())
                     {result = "Using index operator[] on a non array.";break;}
                     //throw new RuntimeException("Using index operator[] on a non array.");
                 previousStatements = exp1.b;
@@ -224,9 +228,9 @@ public class MyJmmOptimization implements JmmOptimization {
                     }else{
                         invokeType = "special";
                     }
-                    returnType = toOllirType(semanticsResult.getSymbolTable().getReturnType(node.get("name")));
+                    returnType = typeToOllir(semanticsResult.getSymbolTable().getReturnType(node.get("name")));
                 }else {
-                    Type idType = getOllirType(calledExpression.a);
+                    Type idType = ollirToType(calledExpression.a);
                     if(idType.isArray()) {
                         //throw new RuntimeException("Calling function of array");
                         result = "Calling function of array";break;
@@ -300,21 +304,26 @@ public class MyJmmOptimization implements JmmOptimization {
                 }*/
                 break;
             }
-            case "NewArr":break;
+            case "NewArr":{
+                var expression = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState,methodName);
+                previousStatements = expression.b;
+                result = "new(array, " + expression.a + ").array.i32";
+                break;
+            }
             case "NewFunc": {
                 var tmp = addTemporaryVariable(localVarsState, new Type(node.get("name"), false));
-                previousStatements.add(tmp.c + toOllirType(tmp.b) + " :=" + toOllirType(tmp.b) + " new(" + tmp.b.getName() + ")" + toOllirType(tmp.b) + ";\n");
-                previousStatements.add("invokespecial(" + tmp.c + toOllirType(tmp.b) + ", \"<init>\").V;\n");
-                result = tmp.c + toOllirType(tmp.b);
+                previousStatements.add(tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) + " new(" + tmp.b.getName() + ")" + typeToOllir(tmp.b) + ";\n");
+                previousStatements.add("invokespecial(" + tmp.c + typeToOllir(tmp.b) + ", \"<init>\").V;\n");
+                result = tmp.c + typeToOllir(tmp.b);
                 break;
             }
             case "NegationOp": {
                 var expression = expressionVisitor(node.getJmmChild(0), semanticsResult, localVarsState, methodName);
-                if( ! getOllirType(expression.a).getName().equals(".bool")){
+                if( ! ollirToType(expression.a).getName().equals(".bool")){
                     result = "Negation operator on a non boolean.";break;
                     //throw new RuntimeException("Negation operator on a non boolean.");
                 }
-                var tmp = addTemporaryVariable(localVarsState, getOllirType(expression.a));
+                var tmp = addTemporaryVariable(localVarsState, ollirToType(expression.a));
                 previousStatements = expression.b;
                 previousStatements.add(tmp.c + ".bool" + " !=.bool " + expression.a + ";\n");
                 result = tmp.c + ".bool";
@@ -338,16 +347,16 @@ public class MyJmmOptimization implements JmmOptimization {
                     break;
                 }
                 if (varState.a) { //is Field
-                    result = "getfield(this," + varState.b.c + toOllirType(varState.b.b) + ")" + toOllirType(varState.b.b);
+                    result = "getfield(this," + varState.b.c + typeToOllir(varState.b.b) + ")" + typeToOllir(varState.b.b);
                 } else {
                     if (!varState.b.a) { //not initialized
                         previousStatements.add(
-                                varState.b.c + toOllirType(varState.b.b)
-                                        + " :=" + toOllirType(varState.b.b)
+                                varState.b.c + typeToOllir(varState.b.b)
+                                        + " :=" + typeToOllir(varState.b.b)
                                         + " " + getTypeDefaultValue(varState.b.b) + ";\n"
                         );
                     }
-                    result = varState.b.c + toOllirType(varState.b.b);
+                    result = varState.b.c + typeToOllir(varState.b.b);
                 }
                 break;
             }
@@ -384,7 +393,7 @@ public class MyJmmOptimization implements JmmOptimization {
                     var expression = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState,methodNode.get("name"));
                     for (String s : expression.b)
                         stringBuilder.append(s);
-                    stringBuilder.append(state.c).append(toOllirType(state.b)).append(" :=").append(toOllirType(state.b)).append(" ").append(expression.a).append(";\n");
+                    stringBuilder.append(state.c).append(typeToOllir(state.b)).append(" :=").append(typeToOllir(state.b)).append(" ").append(expression.a).append(";\n");
 
                     //if(! (getOllirType(expression.a).getName().equals(state.b.getName()) && getOllirType(expression.a).isArray() == state.b.isArray()))
                         //throw new RuntimeException("Assigning mismatching type.");
@@ -425,7 +434,7 @@ public class MyJmmOptimization implements JmmOptimization {
                     var expression = expressionVisitor(child, semanticsResult, localVarsState,methodName);
                     for (String s : expression.b)
                         stringBuilder.append(s);
-                    var retType = toOllirType(semanticsResult.getSymbolTable().getReturnType(methodName));
+                    var retType = typeToOllir(semanticsResult.getSymbolTable().getReturnType(methodName));
                     stringBuilder.append("ret").append(retType).append(" ").append(expression.a).append(";\n");
 
                     break;

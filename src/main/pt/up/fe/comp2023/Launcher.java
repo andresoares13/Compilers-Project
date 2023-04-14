@@ -10,6 +10,7 @@ import pt.up.fe.comp.TestUtils;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
 import pt.up.fe.comp.jmm.jasmin.JasminResult;
+import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.parser.JmmParserResult;
 import pt.up.fe.comp2023.backend.JmmBackend;
 import pt.up.fe.specs.util.SpecsIo;
@@ -56,10 +57,16 @@ public class Launcher {
 
         TestUtils.noErrors(analysisResult.getReports());
 
+        OllirResult ollir = new MyJmmOptimization().toOllir(analysisResult);
+        System.out.println(ollir.getOllirCode());
+
         //table.printImports();
         //table.printVars();
 
-        //JasminResult jasminResult = JmmBackend.toJasmin(ollir)
+        JasminResult jasminResult = new JmmBackend().toJasmin(ollir);
+        System.out.println(jasminResult.getJasminCode());
+        System.out.println(jasminResult.runWithFullOutput().getOutput());
+        //var result = TestUtils.backend(ollir);
     }
 
     private static Map<String, String> parseArgs(String[] args) {
