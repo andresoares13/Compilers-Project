@@ -55,7 +55,7 @@ public class Launcher {
         MyJmmAnalysis analysis = new MyJmmAnalysis();
         JmmSemanticsResult analysisResult = analysis.semanticAnalysis(parserResult);
 
-        TestUtils.noErrors(analysisResult.getReports());
+        //TestUtils.noErrors(analysisResult.getReports());
 
         OllirResult ollir = new MyJmmOptimization().toOllir(analysisResult);
         System.out.println(ollir.getOllirCode());
@@ -65,7 +65,7 @@ public class Launcher {
 
         JasminResult jasminResult = new JmmBackend().toJasmin(ollir);
         System.out.println(jasminResult.getJasminCode());
-        System.out.println(jasminResult.runWithFullOutput().getOutput());
+        //System.out.println(jasminResult.runWithFullOutput().getOutput());
         //var result = TestUtils.backend(ollir);
     }
 

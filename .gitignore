@@ -10,3 +10,4 @@ gradle*
 # Class files
 **/*.class
 !libs-jmm/**/*.class
+test/

@@ -173,7 +173,7 @@ public class MyJmmOptimization implements JmmOptimization {
     Pair<String,ArrayList<String>> expressionVisitor(JmmNode node, JmmSemanticsResult semanticsResult, Map<String, Triple<Boolean,Type,String>> localVarsState){
         ArrayList<String> previousStatements = new ArrayList<>();
         String result="undefined";
-        switch (node.getKind()){//TODO
+        switch (node.getKind()){
             case "BinaryOp": {
                 Pair<String,ArrayList<String>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState),
                         exp2 = expressionVisitor(node.getJmmChild(1),semanticsResult,localVarsState);
@@ -216,7 +216,7 @@ public class MyJmmOptimization implements JmmOptimization {
                 result = tmp.c + typeToOllir(tmp.b);
                 break;
             }
-            case "FuncOp":{ //TODO
+            case "FuncOp":{
                 var calledExpression = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState);
                 String invokeType, returnType, target = calledExpression.a;
                 List<String> arguments = new ArrayList<>();
@@ -361,7 +361,7 @@ public class MyJmmOptimization implements JmmOptimization {
                     //Untested
                     break;
                 }
-                case "ArrayAccess": {//TODO check
+                case "ArrayAccess": {
                     var arrayVar = getVariableState(child.get("name"), localVarsState);
                     Pair<String, ArrayList<String>> expIndex = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState),
                             expValue = expressionVisitor(child.getJmmChild(1), semanticsResult, localVarsState);
@@ -386,7 +386,7 @@ public class MyJmmOptimization implements JmmOptimization {
                     stringBuilder.append("goto endif_").append(ifLabel).append(";\n");
                     stringBuilder.append("ifbody_").append(ifLabel).append(":\n");
                     stringBuilder.append(statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(2))),semanticsResult,localVarsState,methodName));
-                    stringBuilder.append("endif_").append(ifLabel).append(":\n");
+                    stringBuilder.append("endif_").append(ifLabel).append(":\n"); //TODO append NoOp if last instruction in method.
                     break;
                 }
                 case "WhileStatement": {
@@ -401,7 +401,7 @@ public class MyJmmOptimization implements JmmOptimization {
                     stringBuilder.append("whilebody_").append(whileLabel).append(":\n");
                     stringBuilder.append(statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(1))),semanticsResult,localVarsState,methodName));
                     stringBuilder.append("endwhile_").append(whileLabel).append(":\n");
-                    break;
+                    break; //TODO append NoOp if last instruction in method.
                 }
 
                     //catch all 'expression' types, as this means the node is a return statement.
@@ -432,10 +432,3 @@ public class MyJmmOptimization implements JmmOptimization {
         return statementsVisitor(methodNode.getChildren(),semanticsResult,localVarsState,methodName);
     }
 }
-
-/*TODO
-    extends
-    array out of bounds?
-    invokes
-
- */
