@@ -55,6 +55,8 @@ public class Launcher {
         MyJmmAnalysis analysis = new MyJmmAnalysis();
         JmmSemanticsResult analysisResult = analysis.semanticAnalysis(parserResult);
 
+        for(var r:analysisResult.getReports())
+            System.out.println(r);
         //TestUtils.noErrors(analysisResult.getReports());
 
         OllirResult ollir = new MyJmmOptimization().toOllir(analysisResult);
