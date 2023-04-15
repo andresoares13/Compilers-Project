@@ -427,7 +427,7 @@ public class MyJmmOptimization implements JmmOptimization {
             localVarsState.put(aVar.getName(), new Triple<>(false, aVar.getType(),aVar.getName()));
         for(int i=0; i<semanticsResult.getSymbolTable().getParameters(methodName).size() ;++i) {
             var aVar= semanticsResult.getSymbolTable().getParameters(methodName).get(i);
-            localVarsState.put(aVar.getName(), new Triple<>(true, aVar.getType(), "$"+i+"."+aVar.getName()));
+            localVarsState.put(aVar.getName(), new Triple<>(true, aVar.getType(), "$"+(i+1)+"."+aVar.getName()));
         }
         return statementsVisitor(methodNode.getChildren(),semanticsResult,localVarsState,methodName);
     }
