@@ -371,7 +371,7 @@ public class MyJmmOptimization implements JmmOptimization {
                         stringBuilder.append(s);
 
                     stringBuilder.append(arrayVar.b.c).append("[").append(expIndex.a).append("]").append(typeToOllir(new Type(arrayVar.b.b.getName(), false)))
-                            .append(" :=").append(typeToOllir(arrayVar.b.b)).append(" ")
+                            .append(" :=").append(typeToOllir(new Type(arrayVar.b.b.getName(),false))).append(" ")
                             .append(expValue.a).append(";\n");
                     break;
                 }
