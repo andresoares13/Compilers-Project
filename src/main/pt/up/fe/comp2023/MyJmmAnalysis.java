@@ -35,6 +35,8 @@ public class MyJmmAnalysis implements JmmAnalysis {
         }
         reports.removeAll(Collections.singleton(null));
 
+        reports = new ArrayList<>(); //TODO remove
+
         JmmSemanticsResult result = new JmmSemanticsResult(jmmParserResult.getRootNode(),table,reports,config);
         return result;
     }
