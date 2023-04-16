@@ -197,8 +197,11 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
                     int argLine = Integer.valueOf(methodCall.getJmmChild(i).get("lineStart"));
                     int argCol = Integer.valueOf(methodCall.getJmmChild(i).get("colStart"));
                     if(!params.get(i-1).getType().equals(argType)) {
+                        if (!symbolTable.getImports().contains(methodCall.getJmmChild(0).get("value"))){
+                            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Error on method " + methodCall.get("name") + ": invalid method call, types of parameters are invalid. Parameter " + params.get(i-1).getName() + " expected " + params.get(i-1).getType().getName() + " but got " + argType.getName()));
+                        }
 
-                        reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Error on method " + methodCall.get("name") + ": invalid method call, types of parameters are invalid. Parameter " + params.get(i-1).getName() + " expected " + params.get(i-1).getType().getName() + " but got " + argType.getName()));
+
                     }
                 }
 
@@ -209,7 +212,13 @@ public class MethodListVisitor extends PreorderJmmVisitor<Integer, Type> {
         if (symbolTable.getParameters(methodCall.get("name")).size() != methodCall.getChildren().size() - 1){
             int argLine = Integer.valueOf(methodCall.get("lineStart"));
             int argCol = Integer.valueOf(methodCall.get("colStart"));
-            reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Wrong Number of Parameters on method " + methodCall.get("name")));
+
+            VariableSemanticVisitor variableSemanticVisitor = new VariableSemanticVisitor(symbolTable);
+            Type temp = variableSemanticVisitor.visit(methodCall.getJmmChild(0), 0);
+            if (!symbolTable.getImports().contains(temp.getName())){
+                reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, argLine, argCol, "Wrong Number of Parameters on method " + methodCall.get("name")));
+            }
+
         }
 
 
