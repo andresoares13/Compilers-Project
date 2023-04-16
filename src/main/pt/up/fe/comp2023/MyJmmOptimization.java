@@ -207,7 +207,15 @@ public class MyJmmOptimization implements JmmOptimization {
                 previousStatements = exp1.b;
                 previousStatements.addAll(exp2.b);
                 var typeExp1 = ollirToType(exp1.a);
-                result = exp1.a.substring(0,exp1.a.length()-typeToOllir(typeExp1).length()) + "["+exp2.a+"].i32";
+                String target;
+                if(node.getJmmChild(1).getKind().equals("Integer")){
+                    var tmp=addTemporaryVariable(localVarsState,new Type("int",false));
+                    target = tmp.c + typeToOllir(tmp.b);
+                    previousStatements.add(target + " :=.i32 " + exp2.a + ";\n");
+                }else{
+                    target = exp2.a;
+                }
+                result = exp1.a.substring(0,exp1.a.length()-typeToOllir(typeExp1).length()) + "["+target+"].i32";
                 break;
             }
             case "LengthOp": {
@@ -261,16 +269,22 @@ public class MyJmmOptimization implements JmmOptimization {
                 for(int i =1;i<node.getChildren().size();++i){
                     var expressionResult = expressionVisitor(node.getJmmChild(i),semanticsResult,localVarsState);
                     previousStatements.addAll(expressionResult.b);
-                    arguments.add(expressionResult.a);
+                    if(node.getJmmChild(i).getKind().equals("IndexOp")){
+                        var tmp = addTemporaryVariable(localVarsState,ollirToType(expressionResult.a));
+                        previousStatements.add(tmp.c+typeToOllir(tmp.b)+" :="+typeToOllir(tmp.b) + " " + expressionResult.a + ";\n");
+                        arguments.add(tmp.c+typeToOllir(tmp.b));
+                    }else {
+                        arguments.add(expressionResult.a);
+                    }
                 }
 
-                if(! invokeType.equals("static") && node.getJmmParent().getKind().equals("FuncOp") ) {
+                if (invokeType.equals("static") || node.getJmmParent().getKind().equals("SemiColon")) {
+                    result = "invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + typeToOllir(returnType);
+                } else {
                     var tmp = addTemporaryVariable(localVarsState, returnType);
                     previousStatements.add(tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) +
                             " invoke" + invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size() > 0 ? "\", " : "\"") + arguments.stream().reduce((String s1, String s2) -> s1 + ", " + s2).orElse("") + ")" + typeToOllir(returnType) + ";\n");
                     result = tmp.c + typeToOllir(tmp.b);
-                }else{
-                    result = "invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + typeToOllir(returnType);
                 }
                 break;
             }
@@ -380,8 +394,16 @@ public class MyJmmOptimization implements JmmOptimization {
                         stringBuilder.append(s);
                     for (String s : expValue.b)
                         stringBuilder.append(s);
+                    String target;
+                    if(child.getJmmChild(0).getKind().equals("Integer")){
+                        var tmp = addTemporaryVariable(localVarsState,new Type("int",false));
+                        target = tmp.c + typeToOllir(tmp.b);
+                        stringBuilder.append(target).append(" :=").append(typeToOllir(tmp.b)).append(" ").append(expIndex.a).append(";\n");
+                    }else{
+                        target = expIndex.a;
+                    }
 
-                    stringBuilder.append(arrayVar.b.c).append("[").append(expIndex.a).append("]").append(typeToOllir(new Type(arrayVar.b.b.getName(), false)))
+                    stringBuilder.append(arrayVar.b.c).append("[").append(target).append("]").append(typeToOllir(new Type(arrayVar.b.b.getName(), false)))
                             .append(" :=").append(typeToOllir(new Type(arrayVar.b.b.getName(),false))).append(" ")
                             .append(expValue.a).append(";\n");
                     break;
