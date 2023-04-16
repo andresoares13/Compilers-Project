@@ -162,8 +162,8 @@ public class MyJmmOptimization implements JmmOptimization {
     }
     Triple<Boolean,Type,String> addTemporaryVariable(Map<String, Triple<Boolean,Type,String>> localVarsState, Type type){
         for(int i=0;;++i){
-            if(localVarsState.get( "tmp"+ i)==null) {
-                String name = "tmp"+1;
+            if(!localVarsState.containsKey( "tmp"+ i)) {
+                String name = "tmp"+i;
                 var triple = new Triple<>(true,type,name); //assumed to be immediately initialized
                 localVarsState.put(name,triple);
                 return triple;
@@ -218,7 +218,8 @@ public class MyJmmOptimization implements JmmOptimization {
             }
             case "FuncOp":{
                 var calledExpression = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState);
-                String invokeType, returnType, target = calledExpression.a;
+                String invokeType, target = calledExpression.a;
+                Type returnType;
                 List<String> arguments = new ArrayList<>();
                 if(calledExpression.a.equals("this")){
                     var calledMethod = getMethodNode(semanticsResult,node.get("name"));
@@ -232,7 +233,7 @@ public class MyJmmOptimization implements JmmOptimization {
                     }else{
                         invokeType = "special";
                     }
-                    returnType = typeToOllir(semanticsResult.getSymbolTable().getReturnType(node.get("name")));
+                    returnType = semanticsResult.getSymbolTable().getReturnType(node.get("name"));
                 }else {
                     Type idType = ollirToType(calledExpression.a);
                     if(idType.isArray()) {
@@ -245,12 +246,12 @@ public class MyJmmOptimization implements JmmOptimization {
                             //throw new RuntimeException("Calling function of a primitive type);
                         case "import":
                             invokeType="static";
-                            returnType = ".V";
+                            returnType = new Type("void",false);
                             target = target.substring(0,target.indexOf('.'));
                             break;
                         default:
                             invokeType="virtual";
-                            returnType = ".V";
+                            returnType = new Type("void",false);
                             break;
                     }
                 }
@@ -260,7 +261,10 @@ public class MyJmmOptimization implements JmmOptimization {
                     previousStatements.addAll(expressionResult.b);
                     arguments.add(expressionResult.a);
                 }
-                result = "invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + returnType;
+                var tmp = addTemporaryVariable(localVarsState, returnType);
+                previousStatements.add( tmp.c +typeToOllir(tmp.b) + ":=" + typeToOllir(tmp.b) +
+                    " invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + typeToOllir(returnType) +";\n");
+                result = tmp.c + typeToOllir(tmp.b);
                 break;
             }
             case "NewArr":{
