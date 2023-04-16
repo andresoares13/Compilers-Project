@@ -162,6 +162,19 @@ public class MyJmmOptimization implements JmmOptimization {
         else
             return null; //check if it's an import.
     }
+    void setVariableInitialized(String variableName, Map<String,Triple<Boolean,Type,String>> methodVarsState){
+        boolean isLocal = methodVarsState.containsKey(variableName);
+        Triple<Boolean, Type, String> state;
+        if(isLocal){
+            state = methodVarsState.get(variableName);
+            var state2 = new Triple<>(true, state.b, state.c);
+            methodVarsState.put(variableName, state2);
+        }else{
+            state = fieldsState.get(variableName);
+            var state2 = new Triple<>(true, state.b, state.c);
+            fieldsState.put(variableName, state2);
+        }
+    }
     Triple<Boolean,Type,String> addTemporaryVariable(Map<String, Triple<Boolean,Type,String>> localVarsState, Type type){
         for(int i=0;;++i){
             if(!localVarsState.containsKey( "tmp"+ i)) {
@@ -261,7 +274,10 @@ public class MyJmmOptimization implements JmmOptimization {
                             break;
                         default:
                             invokeType="virtual";
-                            returnType = new Type("void",false);
+                            if(idType.getName().equals(semanticsResult.getSymbolTable().getClassName()))
+                                returnType = semanticsResult.getSymbolTable().getReturnType(node.get("name"));
+                            else
+                                returnType = new Type("void",false);
                             break;
                     }
                 }
@@ -331,7 +347,9 @@ public class MyJmmOptimization implements JmmOptimization {
                     break;
                 }
                 if (varState.a) { //is Field
-                    result = "getfield(this," + varState.b.c + typeToOllir(varState.b.b) + ")" + typeToOllir(varState.b.b);
+                    var tmp = addTemporaryVariable(localVarsState,varState.b.b);
+                    previousStatements.add(tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) + " " + "getfield(this," + varState.b.c + typeToOllir(varState.b.b) + ")" + typeToOllir(varState.b.b) + ";\n");
+                    result = tmp.c + typeToOllir(tmp.b);
                 } else {
                     if (!varState.b.a) { //not initialized
                         previousStatements.add(
@@ -360,14 +378,17 @@ public class MyJmmOptimization implements JmmOptimization {
         for(JmmNode child : nodeList){
             switch (child.getKind()) {
                 case "VarDeclareStatement": {
-                    var state = localVarsState.get(child.get("name"));
-                    var state2 = new Triple<>(true, state.b, state.c);
-                    localVarsState.put(child.get("name"), state2);
+                    var state = getVariableState(child.get("name"),localVarsState);
+                    setVariableInitialized(child.get("name"),localVarsState );
+
 
                     var expression = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState);
                     for (String s : expression.b)
                         stringBuilder.append(s);
-                    stringBuilder.append(state.c).append(typeToOllir(state.b)).append(" :=").append(typeToOllir(state.b)).append(" ").append(expression.a).append(";\n");
+                    if(state.a)
+                        stringBuilder.append("putfield(this, " + state.b.c + typeToOllir(state.b.b) + ", " + expression.a + ").V;\n");
+                    else
+                        stringBuilder.append(state.b.c).append(typeToOllir(state.b.b)).append(" :=").append(typeToOllir(state.b.b)).append(" ").append(expression.a).append(";\n");
 
                     //if(! (getOllirType(expression.a).getName().equals(state.b.getName()) && getOllirType(expression.a).isArray() == state.b.isArray()))
                     //throw new RuntimeException("Assigning mismatching type.");
