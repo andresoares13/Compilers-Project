@@ -9,6 +9,7 @@ import pt.up.fe.comp.jmm.analysis.table.Type;
 import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
+import pt.up.fe.comp.jmm.report.Report;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -81,7 +82,8 @@ public class MyJmmOptimization implements JmmOptimization {
 
         String ollirCode = codeBuilder.toString();
 
-        return new OllirResult(ollirCode,jmmSemanticsResult.getConfig());
+        //return new OllirResult(ollirCode,jmmSemanticsResult.getConfig());
+        return new OllirResult(jmmSemanticsResult,ollirCode,jmmSemanticsResult.getReports());
     }
 
     @Override
@@ -261,10 +263,15 @@ public class MyJmmOptimization implements JmmOptimization {
                     previousStatements.addAll(expressionResult.b);
                     arguments.add(expressionResult.a);
                 }
-                var tmp = addTemporaryVariable(localVarsState, returnType);
-                previousStatements.add( tmp.c +typeToOllir(tmp.b) + ":=" + typeToOllir(tmp.b) +
-                    " invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + typeToOllir(returnType) +";\n");
-                result = tmp.c + typeToOllir(tmp.b);
+                
+                if(! invokeType.equals("static") && node.getJmmParent().getKind().equals("FuncOp") ) {
+                    var tmp = addTemporaryVariable(localVarsState, returnType);
+                    previousStatements.add(tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) +
+                            " invoke" + invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size() > 0 ? "\", " : "\"") + arguments.stream().reduce((String s1, String s2) -> s1 + ", " + s2).orElse("") + ")" + typeToOllir(returnType) + ";\n");
+                    result = tmp.c + typeToOllir(tmp.b);
+                }else{
+                    result = " invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + typeToOllir(returnType);
+                }
                 break;
             }
             case "NewArr":{
