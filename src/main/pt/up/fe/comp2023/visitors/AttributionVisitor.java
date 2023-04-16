@@ -71,7 +71,7 @@ public class AttributionVisitor extends PreorderJmmVisitor <Integer, Type>{
         }
 
         for (int k=0;k<symbolTable.getFields().size();k++){
-            if (symbolTable.getFields().get(k).getName().equals(name)){
+            if (symbolTable.getFields().get(k).getName().equals(name) && l.getName().equals("")){
                 l = symbolTable.getFields().get(k).getType();
                 if (parent.get("name").equals("main")){
                     reports.add(new Report(ReportType.ERROR, Stage.SEMANTIC, line, col, "Bad Access to field in Static Method"));

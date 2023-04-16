@@ -1,12 +1,12 @@
-import Dummy;
+import io;
 
-class NoArgsFuncCall {
+class A {
 
+	int a;
 
-	public int bar(Dummy c) {
-
-		c.bar();
-
-		return 1;
-	}
+    public static void main(String[] args){
+        int a;
+        a = 10;
+        io.print(10);
+    }
 }
