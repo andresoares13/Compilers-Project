@@ -1,7 +1,6 @@
 package pt.up.fe.comp2023;
 
 import org.antlr.v4.runtime.misc.Pair;
-import org.antlr.v4.runtime.misc.Triple;
 import pt.up.fe.comp.jmm.analysis.JmmSemanticsResult;
 import pt.up.fe.comp.jmm.analysis.table.Symbol;
 import pt.up.fe.comp.jmm.analysis.table.SymbolTable;
@@ -42,7 +41,7 @@ public class MyJmmOptimization implements JmmOptimization {
         codeBuilder.append(st.getClassName()).append(st.getSuper().equals("") ? "" : " extends " + st.getSuper()).append(" {\n");
         for(Symbol v:st.getFields()){
             codeBuilder.append(".field private ").append(v.getName()).append(typeToOllir(v.getType())).append(";\n");
-            fieldsState.put(v.getName(), new VarState(false,v.getType(),v.getName(),false));
+            fieldsState.put(v.getName(), new VarState(false,v.getType(),v.getName(),false, false));
         }
         codeBuilder.append(".construct ").append(st.getClassName()).append("().V {\n").append("invokespecial(this, \"<init>\").V;\n").append("}\n");
 
@@ -97,16 +96,28 @@ public class MyJmmOptimization implements JmmOptimization {
     }
 
     static class VarState {
-        public boolean a; //is initialized
-        public Type b; //type of var
-        public String c; //name of var
-        public boolean d; //is open for reuse.
+        public boolean isInitialized; //is initialized
+        public Type type; //type of var
+        public String name; //name of var
+        public boolean open; //is open for reuse
+        public boolean isConstant; //is constant
+        public String value;
 
-        public VarState(boolean init, Type type, String name, boolean open){
-            a=init;
-            b=type;
-            c=name;
-            d=open;
+        public VarState(boolean init, Type type, String name, boolean open, boolean constant){
+            isInitialized =init;
+            this.type =type;
+            this.name =name;
+            this.open =open;
+            isConstant =constant;
+            value = "";
+        }
+        public VarState(boolean init, Type type, String name, boolean open, boolean constant, String value){
+            isInitialized =init;
+            this.type =type;
+            this.name =name;
+            this.open =open;
+            isConstant =constant;
+            this.value = value;
         }
     }
     String typeToOllir(Type type){
@@ -187,109 +198,140 @@ public class MyJmmOptimization implements JmmOptimization {
         }else{
             state = fieldsState.get(variableName);
         }
-        state.a = true;
+        state.isInitialized = true;
     }
     VarState addTemporaryVariable(Map<String, VarState> localVarsState, Type type){
         for(int i=0;;++i){
             VarState state = localVarsState.get("tmp" + i);
             if(state == null) {
                 String name = "tmp" + i;
-                VarState addedTemp = new VarState(true,type,name,false);
+                VarState addedTemp = new VarState(true,type,name,false, false);
                 localVarsState.put(name,addedTemp); //assumed to be immediately initialized
                 return addedTemp;
             }
-            if(state.d) {
-                state.d = false;
-                state.b = type;
+            if(state.open) {
+                state.open = false;
+                state.type = type;
                 return state;
             }
         }
     }
     void releaseTemporaryVariable(VarState var){
         //if(rFlagValue != -1)
-            var.d = true;
+            var.open = true;
     }
-    Triple<String,ArrayList<String>,ArrayList<VarState>> expressionVisitor(JmmNode node, JmmSemanticsResult semanticsResult, Map<String, VarState> localVarsState){
+    ExpressionVisitResult expressionVisitor(JmmNode node, JmmSemanticsResult semanticsResult, Map<String, VarState> localVarsState){
         ArrayList<String> previousStatements = new ArrayList<>();
         ArrayList<VarState> previousReleases = new ArrayList<>();
         String result="undefined";
+        Boolean isConstant = false;
+        Type resultType = null;
         switch (node.getKind()){
             case "BinaryOp": {
-                Triple<String,ArrayList<String>,ArrayList<VarState>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState),
+                ExpressionVisitResult exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState),
                         exp2 = expressionVisitor(node.getJmmChild(1),semanticsResult,localVarsState);
-                previousStatements = exp1.b;
-                previousStatements.addAll(exp2.b);
-                previousReleases = exp1.c;
-                previousReleases.addAll(exp2.c);
+                previousStatements = exp1.previousStatements;
+                previousStatements.addAll(exp2.previousStatements);
+                previousReleases = exp1.freeVars;
+                previousReleases.addAll(exp2.freeVars);
                 String op = node.get("op");
-                Type opType;
                 if(op.equals("<") || op.equals("&&"))
-                    opType = new Type("boolean",false);
+                    resultType = new Type("boolean",false);
                 else
-                    opType = new Type("int",false);
-                var tmp = addTemporaryVariable(localVarsState,opType);
-                previousReleases.add(tmp);
-                previousStatements.add(
-                        tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) + " "
-                        + exp1.a + " " + op + typeToOllir(opType) + " " + exp2.a + ";\n"
-                );
-                result = tmp.c + typeToOllir(tmp.b);
+                    resultType = new Type("int",false);
+
+                isConstant = exp1.isConstant && exp2.isConstant;
+                if(isConstant){
+                    switch(op){
+                        case "<":
+                            result = (Integer.parseInt(exp1.result.substring(0,exp1.result.lastIndexOf("."))) < Integer.parseInt(exp2.result.substring(0,exp2.result.lastIndexOf("."))))+ ".bool";
+                            break;
+                        case "&&":
+                            result = (exp1.result.equals("true.bool") && exp2.result.equals("true.bool")) + ".bool";
+                            break;
+                        case "+":
+                            result = (Integer.parseInt(exp1.result.substring(0,exp1.result.lastIndexOf("."))) + Integer.parseInt(exp2.result.substring(0,exp2.result.lastIndexOf(".")))) + ".i32";
+                            break;
+                        case "-":
+                            result = (Integer.parseInt(exp1.result.substring(0,exp1.result.lastIndexOf("."))) - Integer.parseInt(exp2.result.substring(0,exp2.result.lastIndexOf(".")))) + ".i32";
+                            break;
+                        case "/":
+                            if(exp2.result.equals("0.i32")){
+                                //divide by 0 Error.
+                            }
+                            result = Integer.parseInt(exp1.result.substring(0, exp1.result.lastIndexOf("."))) / Integer.parseInt(exp2.result.substring(0, exp2.result.lastIndexOf("."))) + ".i32";
+                            break;
+                        case "*":
+                            result = Integer.parseInt(exp1.result.substring(0, exp1.result.lastIndexOf("."))) * Integer.parseInt(exp2.result.substring(0, exp2.result.lastIndexOf("."))) + ".i32";
+                            break;
+                    }
+                }else {
+                    var tmp = addTemporaryVariable(localVarsState, resultType);
+                    previousReleases.add(tmp);
+                    previousStatements.add(
+                            tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " "
+                                    + exp1.result + " " + op + typeToOllir(resultType) + " " + exp2.result + ";\n"
+                    );
+                    result = tmp.name + typeToOllir(tmp.type);
+                }
                 break;
             }
             case "IndexOp":{
-                Triple<String,ArrayList<String>,ArrayList<VarState>> exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState),
+                ExpressionVisitResult exp1 = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState),
                         exp2 = expressionVisitor(node.getJmmChild(1),semanticsResult,localVarsState);
-                if( ! ollirToType(exp2.a).getName().equals("int"))
+                if( ! ollirToType(exp2.result).getName().equals("int"))
                     {result = "Non integer used as array index.";break;}
                 //throw new RuntimeException("Non integer used as array index.");
-                if(! ollirToType(exp1.a).isArray())
+                if(! ollirToType(exp1.result).isArray())
                     {result = "Using index operator[] on a non array.";break;}
                     //throw new RuntimeException("Using index operator[] on a non array.");
-                previousStatements = exp1.b;
-                previousStatements.addAll(exp2.b);
-                previousReleases = exp1.c;
-                previousReleases.addAll(exp2.c);
-                var typeExp1 = ollirToType(exp1.a);
+                previousStatements = exp1.previousStatements;
+                previousStatements.addAll(exp2.previousStatements);
+                previousReleases = exp1.freeVars;
+                previousReleases.addAll(exp2.freeVars);
+                var typeExp1 = ollirToType(exp1.result);
                 String target;
-                if(node.getJmmChild(1).getKind().equals("Integer")){
+                if(exp2.isConstant){
                     var tmp=addTemporaryVariable(localVarsState,new Type("int",false));
                     previousReleases.add(tmp);
-                    target = tmp.c + typeToOllir(tmp.b);
-                    previousStatements.add(target + " :=.i32 " + exp2.a + ";\n");
+                    target = tmp.name + typeToOllir(tmp.type);
+                    previousStatements.add(target + " :=.i32 " + exp2.result + ";\n");
                 }else{
-                    target = exp2.a;
+                    target = exp2.result;
                 }
-                result = exp1.a.substring(0,exp1.a.length()-typeToOllir(typeExp1).length()) + "["+target+"].i32";
+                result = exp1.result.substring(0,exp1.result.length()-typeToOllir(typeExp1).length()) + "["+target+"].i32";
                 if(
                         (node.getJmmParent().getKind().equals("ArrayAccess")  && node.getJmmParent().getJmmChild(0) == node)
                         || node.getJmmParent().getKind().equals("IndexOp")
                 ){ //creates a temp variable if this IndexOp is itself an IndexOp
                     var tmp=addTemporaryVariable(localVarsState,new Type("int",false));
                     previousReleases.add(tmp);
-                    target = tmp.c + typeToOllir(tmp.b);
+                    target = tmp.name + typeToOllir(tmp.type);
                     previousStatements.add(target + " :=.i32 " + result + ";\n");
-                    result = tmp.c + typeToOllir(tmp.b);
+                    result = tmp.name + typeToOllir(tmp.type);
                 }
+                resultType = new Type("int",false);
                 break;
             }
             case "LengthOp": {
                 var expression = expressionVisitor(node.getJmmChild(0), semanticsResult, localVarsState);
-                previousStatements = expression.b;
-                previousReleases = expression.c;
+                previousStatements = expression.previousStatements;
+                previousReleases = expression.freeVars;
                 var tmp = addTemporaryVariable(localVarsState,ollirToType(".i32"));
                 previousReleases.add(tmp);
-                previousStatements.add(tmp.c+ typeToOllir(tmp.b)+" :=.i32 arraylength(" + expression.a + ").i32;\n");
-                result = tmp.c + typeToOllir(tmp.b);
+                previousStatements.add(tmp.name + typeToOllir(tmp.type)+" :=.i32 arraylength(" + expression.result + ").i32;\n");
+                result = tmp.name + typeToOllir(tmp.type);
+                resultType = new Type("int",false);
                 break;
             }
             case "FuncOp":{
                 var calledExpression = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState);
-                previousStatements = calledExpression.b;
-                previousReleases = calledExpression.c;
-                String invokeType, target = calledExpression.a;
-                Type returnType;
+                previousStatements = calledExpression.previousStatements;
+                previousReleases = calledExpression.freeVars;
+                String invokeType,
+                        target = calledExpression.result;
                 List<String> arguments = new ArrayList<>();
-                if(calledExpression.a.equals("this")){
+                if(calledExpression.result.equals("this")){
                     var calledMethod = getMethodNode(semanticsResult,node.get("name"));
                     if(calledMethod == null){
                         result = "Method does not exist";
@@ -301,158 +343,189 @@ public class MyJmmOptimization implements JmmOptimization {
                     }else{
                         invokeType = "special";
                     }
-                    returnType = semanticsResult.getSymbolTable().getReturnType(node.get("name"));
+                    resultType = semanticsResult.getSymbolTable().getReturnType(node.get("name"));
                 }else {
-                    Type idType = ollirToType(calledExpression.a);
-                    if(idType.isArray()) {
+                    if(calledExpression.type.isArray()) {
                         //throw new RuntimeException("Calling function of array");
                         result = "Calling function of array";break;
                     }
-                    switch(idType.getName()){
+                    switch(calledExpression.type.getName()){
                         case "int":
                         case "boolean":
                             //throw new RuntimeException("Calling function of a primitive type);
                         case "import":
                             invokeType="static";
-                            returnType = new Type("void",false);
-                            target = target.substring(0,target.indexOf('.'));
+                            resultType = new Type("void",false);
                             break;
                         default:
                             invokeType="virtual";
-                            if(idType.getName().equals(semanticsResult.getSymbolTable().getClassName()))
-                                returnType = semanticsResult.getSymbolTable().getReturnType(node.get("name"));
+                            if(calledExpression.type.getName().equals(semanticsResult.getSymbolTable().getClassName()))
+                                resultType = semanticsResult.getSymbolTable().getReturnType(node.get("name"));
                             else
-                                returnType = new Type("void",false);
+                                resultType = new Type("void",false);
                             break;
                     }
                 }
                 for(int i =1;i<node.getChildren().size();++i){
                     var expressionResult = expressionVisitor(node.getJmmChild(i),semanticsResult,localVarsState);
-                    previousStatements.addAll(expressionResult.b);
-                    previousReleases.addAll(expressionResult.c);
+                    previousStatements.addAll(expressionResult.previousStatements);
+                    previousReleases.addAll(expressionResult.freeVars);
                     if(node.getJmmChild(i).getKind().equals("IndexOp")){
-                        var tmp = addTemporaryVariable(localVarsState,ollirToType(expressionResult.a));
+                        var tmp = addTemporaryVariable(localVarsState,ollirToType(expressionResult.result));
                         previousReleases.add(tmp);
-                        previousStatements.add(tmp.c+typeToOllir(tmp.b)+" :="+typeToOllir(tmp.b) + " " + expressionResult.a + ";\n");
-                        arguments.add(tmp.c+typeToOllir(tmp.b));
+                        previousStatements.add(tmp.name +typeToOllir(tmp.type)+" :="+typeToOllir(tmp.type) + " " + expressionResult.result + ";\n");
+                        arguments.add(tmp.name +typeToOllir(tmp.type));
                     }else {
-                        arguments.add(expressionResult.a);
+                        arguments.add(expressionResult.result);
                     }
                 }
 
                 if (invokeType.equals("static") || node.getJmmParent().getKind().equals("SemiColon")) {
-                    result = "invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + typeToOllir(returnType);
+                    result = "invoke"+ invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size()>0?"\", ":"\"") + arguments.stream().reduce((String s1,String s2)->s1+", "+s2).orElse("") +")" + typeToOllir(resultType);
                 } else {
-                    var tmp = addTemporaryVariable(localVarsState, returnType);
+                    var tmp = addTemporaryVariable(localVarsState, resultType);
                     previousReleases.add(tmp);
-                    previousStatements.add(tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) +
-                            " invoke" + invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size() > 0 ? "\", " : "\"") + arguments.stream().reduce((String s1, String s2) -> s1 + ", " + s2).orElse("") + ")" + typeToOllir(returnType) + ";\n");
-                    result = tmp.c + typeToOllir(tmp.b);
+                    previousStatements.add(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) +
+                            " invoke" + invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size() > 0 ? "\", " : "\"") + arguments.stream().reduce((String s1, String s2) -> s1 + ", " + s2).orElse("") + ")" + typeToOllir(resultType) + ";\n");
+                    result = tmp.name + typeToOllir(tmp.type);
                 }
                 break;
             }
             case "NewArr":{
                 var expression = expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState);
-                previousStatements = expression.b;
-                previousReleases = expression.c;
-                result = "new(array, " + expression.a + ").array.i32";
+                previousStatements = expression.previousStatements;
+                previousReleases = expression.freeVars;
+                result = "new(array, " + expression.result + ").array.i32";
+                resultType = new Type("int",true);
                 break;
             }
             case "NewFunc": {
                 var tmp = addTemporaryVariable(localVarsState, new Type(node.get("name"), false));
                 previousReleases.add(tmp);
-                previousStatements.add(tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) + " new(" + tmp.b.getName() + ")" + typeToOllir(tmp.b) + ";\n");
-                previousStatements.add("invokespecial(" + tmp.c + typeToOllir(tmp.b) + ", \"<init>\").V;\n");
-                result = tmp.c + typeToOllir(tmp.b);
+                previousStatements.add(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " new(" + tmp.type.getName() + ")" + typeToOllir(tmp.type) + ";\n");
+                previousStatements.add("invokespecial(" + tmp.name + typeToOllir(tmp.type) + ", \"<init>\").V;\n");
+                result = tmp.name + typeToOllir(tmp.type);
+                resultType = new Type(node.get("name"), false);
                 break;
             }
             case "NegationOp": {
                 var expression = expressionVisitor(node.getJmmChild(0), semanticsResult, localVarsState);
-                if( ! ollirToType(expression.a).getName().equals("boolean")){
+                if( ! ollirToType(expression.result).getName().equals("boolean")){
                     result = "Negation operator on a non boolean.";break;
                     //throw new RuntimeException("Negation operator on a non boolean.");
                 }
-                var tmp = addTemporaryVariable(localVarsState, ollirToType(expression.a));
+                if(expression.isConstant){
+                    result = String.valueOf(!expression.result.equals("true.bool")) + ".bool";
+                    isConstant = true;
+                    break;
+                }
+                var tmp = addTemporaryVariable(localVarsState, ollirToType(expression.result));
                 previousReleases.add(tmp);
-                previousStatements = expression.b;
-                previousReleases = expression.c;
-                previousStatements.add(tmp.c + ".bool" + " :=.bool !.bool " + expression.a + ";\n");
-                result = tmp.c + ".bool";
+                previousStatements = expression.previousStatements;
+                previousReleases = expression.freeVars;
+                previousStatements.add(tmp.name + ".bool" + " :=.bool !.bool " + expression.result + ";\n");
+                result = tmp.name + ".bool";
+                resultType = new Type("boolean",false);
                 break;
             }
             case "ParOp":
                 return expressionVisitor(node.getJmmChild(0),semanticsResult,localVarsState);
             case "Integer":
                 result = node.get("value")+".i32";
+                isConstant=true;
+                resultType = new Type("int",false);
                 break;
             case "Identifier": {
                 var varState = getVariableState(node.get("value"), localVarsState);
-                if(varState== null){ //check imports
+                if(varState == null){ //check imports
                     var imported = semanticsResult.getSymbolTable().getImports().stream().filter((String n)-> n.equals(node.get("value"))).findFirst();
                     if(imported.isEmpty()) {
                         result = "Undeclared identifier.";break;
                         //throw new RuntimeException("Undeclared identifier.");
                     }
-                    else
-                        result = imported.get() + ".import";
+                    else {
+                        result = imported.get();
+                        resultType = new Type("import",false);//.import is a local tag, not added to ollir. Important for FuncOp
+                    }
                     break;
                 }
                 if (varState.a) { //is Field
-                    var tmp = addTemporaryVariable(localVarsState,varState.b.b);
+                    var tmp = addTemporaryVariable(localVarsState,varState.b.type);
                     previousReleases.add(tmp);
-                    previousStatements.add(tmp.c + typeToOllir(tmp.b) + " :=" + typeToOllir(tmp.b) + " " + "getfield(this," + varState.b.c + typeToOllir(varState.b.b) + ")" + typeToOllir(varState.b.b) + ";\n");
-                    result = tmp.c + typeToOllir(tmp.b);
+                    previousStatements.add(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " " + "getfield(this," + varState.b.name + typeToOllir(varState.b.type) + ")" + typeToOllir(varState.b.type) + ";\n");
+                    result = tmp.name + typeToOllir(tmp.type);
+                    resultType = tmp.type;
                 } else {
-                    if (!varState.b.a) { //not initialized
+                    resultType = varState.b.type;
+                    if(varState.b.isConstant){ //return constant value instead.
+                        result = varState.b.value + typeToOllir(varState.b.type);
+                        isConstant = true;
+                        break;
+                    }
+                    if (!varState.b.isInitialized) { //not initialized
                         previousStatements.add(
-                                varState.b.c + typeToOllir(varState.b.b)
-                                        + " :=" + typeToOllir(varState.b.b)
-                                        + " " + getTypeDefaultValue(varState.b.b) + ";\n"
+                                varState.b.name + typeToOllir(varState.b.type)
+                                        + " :=" + typeToOllir(varState.b.type)
+                                        + " " + getTypeDefaultValue(varState.b.type) + ";\n"
                         );
                     }
-                    result = varState.b.c + typeToOllir(varState.b.b);
+                    result = varState.b.name + typeToOllir(varState.b.type);
+                    resultType = varState.b.type;
                 }
                 break;
             }
             case "This":
                 result = "this";
+                resultType = new Type(semanticsResult.getSymbolTable().getClassName(),false);
                 break;
             case "Bool":
                 result = node.get("value")+".bool";
+                resultType = new Type("boolean" , false);
                 break;
         }
         if(result.equals("undefined"))
             result = "node:[" + node.getKind() + "]"; //throw new RuntimeException();
-        return new Triple<>(result,previousStatements, previousReleases);
+        return new ExpressionVisitResult(result,previousStatements, previousReleases,isConstant,resultType);
     }
     String statementsVisitor(List<JmmNode> nodeList, JmmSemanticsResult semanticsResult, Map<String, VarState> localVarsState, String methodName){
         StringBuilder stringBuilder = new StringBuilder();
         for(JmmNode child : nodeList){
             switch (child.getKind()) {
                 case "VarDeclareStatement": {
-                    var state = getVariableState(child.get("name"),localVarsState);
-                    setVariableInitialized(child.get("name"),localVarsState );
                     var expression = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState);
-                    for (String s : expression.b)
+                    for (String s : expression.previousStatements)
                         stringBuilder.append(s);
-                    for(VarState openVar : expression.c)
+                    for(VarState openVar : expression.freeVars)
                         releaseTemporaryVariable(openVar);
-                    if(state.a)
-                        stringBuilder.append("putfield(this, " + state.b.c + typeToOllir(state.b.b) + ", " + expression.a + ").V;\n");
-                    else
-                        stringBuilder.append(state.b.c).append(typeToOllir(state.b.b)).append(" :=").append(typeToOllir(state.b.b)).append(" ").append(expression.a).append(";\n");
+                    var state = getVariableState(child.get("name"),localVarsState);
+                    state.b.isInitialized = true;
+                    if (state.a){
+                        stringBuilder.append("putfield(this, " + state.b.name + typeToOllir(state.b.type) + ", " + expression.result + ").V;\n");
+                        break;
+                    }
+                    if(expression.isConstant){
+                        state.b.isConstant = true;
+                        state.b.value = expression.result.substring(0,expression.result.lastIndexOf("."));
+
+                    }else{
+                        stringBuilder.append(state.b.name).append(typeToOllir(state.b.type)).append(" :=").append(typeToOllir(state.b.type)).append(" ").append(expression.result).append(";\n");
+                    }
                     //if(! (getOllirType(expression.a).getName().equals(state.b.getName()) && getOllirType(expression.a).isArray() == state.b.isArray()))
                     //throw new RuntimeException("Assigning mismatching type.");
                     break;
                 }
                 case "SemiColon": {
-                    var statements = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState);
-                    for (String s : statements.b)
-                        stringBuilder.append(s);
-                    if (!statements.a.equals(""))
-                        stringBuilder.append(statements.a).append(";\n");
-                    for(VarState openVar : statements.c)
-                        releaseTemporaryVariable(openVar);
+                    while(child.getJmmChild(0).getKind().equals("ParOp")) //ParOp inside SemiColon is to be ignored.
+                        child=child.getJmmChild(0);
+                    if(child.getJmmChild(0).getKind().matches("(NewFunc|FuncOp)")) { //only FuncOp is not a NoOp. TODO confirm newArr is not required.
+                        var statements = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState);
+                        for (String s : statements.previousStatements)
+                            stringBuilder.append(s);
+                        if (!statements.result.equals(""))
+                            stringBuilder.append(statements.result).append(";\n");
+                        for (VarState openVar : statements.freeVars)
+                            releaseTemporaryVariable(openVar);
+                    }
                     break;
                 }
                 case "Brackets": {
@@ -461,39 +534,39 @@ public class MyJmmOptimization implements JmmOptimization {
                 }
                 case "ArrayAccess": {
                     var arrayVar = getVariableState(child.get("name"), localVarsState);
-                    Triple<String, ArrayList<String>, ArrayList<VarState>> expIndex = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState),
+                    ExpressionVisitResult expIndex = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState),
                             expValue = expressionVisitor(child.getJmmChild(1), semanticsResult, localVarsState);
-                    for (String s : expIndex.b)
+                    for (String s : expIndex.previousStatements)
                         stringBuilder.append(s);
-                    for (String s : expValue.b)
+                    for (String s : expValue.previousStatements)
                         stringBuilder.append(s);
                     String target;
                     if(child.getJmmChild(0).getKind().equals("Integer")){
                         var tmp = addTemporaryVariable(localVarsState,new Type("int",false));
-                        expIndex.c.add(tmp);
-                        target = tmp.c + typeToOllir(tmp.b);
-                        stringBuilder.append(target).append(" :=").append(typeToOllir(tmp.b)).append(" ").append(expIndex.a).append(";\n");
+                        expIndex.freeVars.add(tmp);
+                        target = tmp.name + typeToOllir(tmp.type);
+                        stringBuilder.append(target).append(" :=").append(typeToOllir(tmp.type)).append(" ").append(expIndex.result).append(";\n");
                     }else{
-                        target = expIndex.a;
+                        target = expIndex.result;
                     }
-                    stringBuilder.append(arrayVar.b.c).append("[").append(target).append("]").append(typeToOllir(new Type(arrayVar.b.b.getName(), false)))
-                            .append(" :=").append(typeToOllir(new Type(arrayVar.b.b.getName(),false))).append(" ")
-                            .append(expValue.a).append(";\n");
-                    for(VarState openVar : expIndex.c)
+                    stringBuilder.append(arrayVar.b.name).append("[").append(target).append("]").append(typeToOllir(new Type(arrayVar.b.type.getName(), false)))
+                            .append(" :=").append(typeToOllir(new Type(arrayVar.b.type.getName(),false))).append(" ")
+                            .append(expValue.result).append(";\n");
+                    for(VarState openVar : expIndex.freeVars)
                         releaseTemporaryVariable(openVar);
-                    for(VarState openVar : expValue.c)
+                    for(VarState openVar : expValue.freeVars)
                         releaseTemporaryVariable(openVar);
                     break;
                 }
                 case "IfElseStatement": {
                     var ifExpression = expressionVisitor(child.getJmmChild(0),semanticsResult,localVarsState);
-                    for(String s: ifExpression.b)
+                    for(String s: ifExpression.previousStatements)
                         stringBuilder.append(s);
-                    for(VarState openVar : ifExpression.c)
+                    for(VarState openVar : ifExpression.freeVars)
                         releaseTemporaryVariable(openVar);
                     int ifLabel = ifLabelCount;
                     ifLabelCount++;
-                    stringBuilder.append("if(").append(ifExpression.a).append(") goto ifbody_").append(ifLabel).append(";\n");
+                    stringBuilder.append("if(").append(ifExpression.result).append(") goto ifbody_").append(ifLabel).append(";\n");
                     stringBuilder.append(statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(1))),semanticsResult,localVarsState,methodName));
                     stringBuilder.append("goto endif_").append(ifLabel).append(";\n");
                     stringBuilder.append("ifbody_").append(ifLabel).append(":\n");
@@ -503,13 +576,13 @@ public class MyJmmOptimization implements JmmOptimization {
                 }
                 case "WhileStatement": {
                     var whileExpression = expressionVisitor(child.getJmmChild(0),semanticsResult,localVarsState);
-                    for(String s: whileExpression.b)
+                    for(String s: whileExpression.previousStatements)
                         stringBuilder.append(s);
                     int whileLabel = whileLabelCount;
                     whileLabelCount++;
-                    for(VarState openVar : whileExpression.c)
+                    for(VarState openVar : whileExpression.freeVars)
                         releaseTemporaryVariable(openVar);
-                    stringBuilder.append("if(").append(whileExpression.a).append(") goto whilebody_").append(whileLabel).append(";\n");
+                    stringBuilder.append("if(").append(whileExpression.result).append(") goto whilebody_").append(whileLabel).append(";\n");
                     stringBuilder.append("goto endwhile_").append(whileLabel).append(";\n");
                     stringBuilder.append("whilebody_").append(whileLabel).append(":\n");
                     stringBuilder.append(statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(1))),semanticsResult,localVarsState,methodName));
@@ -522,11 +595,11 @@ public class MyJmmOptimization implements JmmOptimization {
                 case "NewFunc": case "NegationOp": case "ParOp": case "Integer": case "Bool":
                 case "Identifier": case "This": {
                     var expression = expressionVisitor(child, semanticsResult, localVarsState);
-                    for (String s : expression.b)
+                    for (String s : expression.previousStatements)
                         stringBuilder.append(s);
                     var retType = typeToOllir(semanticsResult.getSymbolTable().getReturnType(methodName));
-                    stringBuilder.append("ret").append(retType).append(" ").append(expression.a).append(";\n");
-                    for(VarState openVar : expression.c)
+                    stringBuilder.append("ret").append(retType).append(" ").append(expression.result).append(";\n");
+                    for(VarState openVar : expression.freeVars)
                         releaseTemporaryVariable(openVar);
                     break;
                 }
@@ -538,11 +611,31 @@ public class MyJmmOptimization implements JmmOptimization {
         String methodName = methodNode.get("name");
         Map<String, VarState> localVarsState = new HashMap<>();
         for(var aVar:semanticsResult.getSymbolTable().getLocalVariables(methodName))
-            localVarsState.put(aVar.getName(), new VarState(false, aVar.getType(),aVar.getName(),false));
+            localVarsState.put(aVar.getName(), new VarState(false, aVar.getType(),aVar.getName(),false, false));
         for(int i=0; i<semanticsResult.getSymbolTable().getParameters(methodName).size() ;++i) {
             var aVar= semanticsResult.getSymbolTable().getParameters(methodName).get(i);
-            localVarsState.put(aVar.getName(), new VarState(true, aVar.getType(), "$"+(i+1)+"."+aVar.getName(),false));
+            localVarsState.put(aVar.getName(), new VarState(true, aVar.getType(), "$"+(i+1)+"."+aVar.getName(),false, false));
         }
         return statementsVisitor(methodNode.getChildren(),semanticsResult,localVarsState,methodName);
+    }
+
+    private class ExpressionVisitResult{
+        //Quartet<String,ArrayList<String>,ArrayList<VarState>,Boolean>
+        String result;
+        ArrayList<String> previousStatements;
+        ArrayList<VarState> freeVars;
+        Boolean isConstant;
+
+        Type type;
+
+
+
+        ExpressionVisitResult(String p1, ArrayList<String> p2, ArrayList<VarState> p3, Boolean p4, Type p5){
+            result = p1;
+            previousStatements = p2;
+            freeVars = p3;
+            isConstant = p4;
+            type = p5;
+        }
     }
 }
