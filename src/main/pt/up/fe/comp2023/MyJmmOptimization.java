@@ -176,9 +176,10 @@ public class MyJmmOptimization implements JmmOptimization {
         }
     }
     Triple<Boolean,Type,String> addTemporaryVariable(Map<String, Triple<Boolean,Type,String>> localVarsState, Type type){
+        String typeString =  typeToOllir(type).replace('.','_');
         for(int i=0;;++i){
-            if(!localVarsState.containsKey( "tmp"+ i)) {
-                String name = "tmp"+i;
+            if(!localVarsState.containsKey( "tmp"+ typeString + "_" + i)) {
+                String name = "tmp" + typeString + "_" + i;
                 var triple = new Triple<>(true,type,name); //assumed to be immediately initialized
                 localVarsState.put(name,triple);
                 return triple;
@@ -229,6 +230,15 @@ public class MyJmmOptimization implements JmmOptimization {
                     target = exp2.a;
                 }
                 result = exp1.a.substring(0,exp1.a.length()-typeToOllir(typeExp1).length()) + "["+target+"].i32";
+                if(
+                        (node.getJmmParent().getKind().equals("ArrayAccess")  && node.getJmmParent().getJmmChild(0) == node)
+                        || node.getJmmParent().getKind().equals("IndexOp")
+                ){ //creates a temp variable if this IndexOp is itself an IndexOp
+                    var tmp=addTemporaryVariable(localVarsState,new Type("int",false));
+                    target = tmp.c + typeToOllir(tmp.b);
+                    previousStatements.add(target + " :=.i32 " + result + ";\n");
+                    result = tmp.c + typeToOllir(tmp.b);
+                }
                 break;
             }
             case "LengthOp": {
