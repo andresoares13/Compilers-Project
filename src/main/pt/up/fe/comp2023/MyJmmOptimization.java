@@ -502,19 +502,21 @@ public class MyJmmOptimization implements JmmOptimization {
                     break;
                 }
                 case "WhileStatement": {
+                    StringBuilder expressionString =new StringBuilder();
                     var whileExpression = expressionVisitor(child.getJmmChild(0),semanticsResult,localVarsState);
                     for(String s: whileExpression.b)
-                        stringBuilder.append(s);
+                        expressionString.append(s);
                     int whileLabel = whileLabelCount;
                     whileLabelCount++;
                     for(VarState openVar : whileExpression.c)
                         releaseTemporaryVariable(openVar);
-                    stringBuilder.append("if(").append(whileExpression.a).append(") goto whilebody_").append(whileLabel).append(";\n");
-                    stringBuilder.append("goto endwhile_").append(whileLabel).append(";\n");
+                    stringBuilder.append("goto whilestart_").append(whileLabel).append(";\n");
                     stringBuilder.append("whilebody_").append(whileLabel).append(":\n");
                     stringBuilder.append(statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(1))),semanticsResult,localVarsState,methodName));
-                    stringBuilder.append("endwhile_").append(whileLabel).append(":\n");
-                    break; //TODO append NoOp if last instruction in method.
+                    stringBuilder.append("whilestart_").append(whileLabel).append(":\n");
+                    stringBuilder.append(expressionString);
+                    stringBuilder.append("if(").append(whileExpression.a).append(") goto whilebody_").append(whileLabel).append(";\n");
+                    break;
                 }
 
                     //catch all 'expression' types, as this means the node is a return statement.
