@@ -312,13 +312,23 @@ public class InstructionTranslator {
         Element leftElement = instruction.getLeftOperand();
         Element rightElement = instruction.getRightOperand();
 
-        jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
-        jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
-        jasminInstruction.append(getIndentation());
+        if(!(operationType == OperationType.ADD || operationType == OperationType.LTH)) {
+            jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+            jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+            jasminInstruction.append(getIndentation());
+        }
 
         switch (operationType) {
             case ADD:
-                jasminInstruction.append("iadd");
+                if(leftElement.isLiteral() && !rightElement.isLiteral()){
+                    return get_iinc((LiteralElement) leftElement, (Operand) rightElement, method);
+                } else if (!leftElement.isLiteral() && rightElement.isLiteral()) {
+                    return get_iinc((LiteralElement) rightElement, (Operand) leftElement, method);
+                } else
+                    jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                    jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+                    jasminInstruction.append(getIndentation());
+                    jasminInstruction.append("iadd");
                 break;
             case SUB:
                 jasminInstruction.append("isub");
@@ -342,6 +352,15 @@ public class InstructionTranslator {
                 break;
         }
         return jasminInstruction.toString();
+    }
+
+    private String get_iinc(LiteralElement literalElement, Operand operand, Method method) {
+        StringBuilder jasminInstruction = new StringBuilder();
+        Descriptor descriptor = method.getVarTable().get(operand.getName());
+
+        jasminInstruction.append("iinc ").append(descriptor.getVirtualReg());
+        jasminInstruction.append(" ").append(JasminUtils.trimLiteral(literalElement.getLiteral()));
+        return getCorrespondingLoad(operand, method) + "\n" +  getIndentation() + jasminInstruction;
     }
 
     private String getCorrespondingLoad(Element element, Method method) {
