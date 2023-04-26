@@ -605,6 +605,9 @@ public class MyJmmOptimization implements JmmOptimization {
                 }
             }
         }
+        if(stringBuilder.length()>2 && stringBuilder.charAt(stringBuilder.length()-2) == ':'){
+            stringBuilder.append("ret.V;\n");
+        }
         return stringBuilder.toString();
     }
     String methodVisitor(JmmNode methodNode, JmmSemanticsResult semanticsResult){
