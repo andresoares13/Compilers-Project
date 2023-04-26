@@ -125,7 +125,7 @@ public class InstructionTranslator {
                 if(elementType == ElementType.CLASS || elementType == ElementType.OBJECTREF) {
                     jasminInstruction.append(getIndentation()).append("new ").append(caller.getName()).append("\n");
                     jasminInstruction.append(getIndentation()).append("dup");
-                } else if (elementType == ElementType.ARRAYREF) { // array does not need a dup
+                } else if (elementType == ElementType.ARRAYREF) {
                     ArrayList<Element> operands = instruction.getListOfOperands();
                     if (operands.size() < 1) {
                         return "";
@@ -236,9 +236,7 @@ public class InstructionTranslator {
                 jasminInstruction.append(getCorrespondingLoad(dest, method)).append("\n");
                 jasminInstruction.append(getIndentation()).append("getfield ");
             }
-            case CLASS -> {
-                jasminInstruction.append(getIndentation()).append("getstatic ");
-            }
+            case CLASS -> jasminInstruction.append(getIndentation()).append("getstatic ");
             default -> {}
         }
 
@@ -268,9 +266,7 @@ public class InstructionTranslator {
                 jasminInstruction.append(getCorrespondingLoad(newValue, method)).append("\n");
                 jasminInstruction.append(getIndentation()).append("putfield ");
             }
-            case CLASS -> {
-                jasminInstruction.append(getIndentation()).append("putstatic ");
-            }
+            case CLASS -> jasminInstruction.append(getIndentation()).append("putstatic ");
             default -> {}
         }
 

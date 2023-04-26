@@ -38,6 +38,11 @@ public class JasminTest {
         testOllirToJasmin("pt/up/fe/comp/cp2/apps/example_ollir/Simple.ollir");
     }
 
+    @Test
+    public void ollirToJasminArray() {
+        testOllirToJasmin("pt/up/fe/comp/cp2/apps/example_ollir/Array.ollir");
+    }
+
     public static void testOllirToJasmin(String resource, String expectedOutput) {
         SpecsCheck.checkArgument(resource.endsWith(".ollir"), () -> "Expected resource to end with .ollir: " + resource);
 
@@ -56,12 +61,12 @@ public class JasminTest {
 
         var ollirResult = new OllirResult(SpecsIo.getResource(resource), Collections.emptyMap());
 
-        var result = TestUtils.backend(ollirResult);
+        //var result = TestUtils.backend(ollirResult);
 
-        //JmmBackend backend = new JmmBackend();
-        //var my_result = backend.toJasmin(ollirResult);
+        JmmBackend backend = new JmmBackend();
+        var my_result = backend.toJasmin(ollirResult);
 
-        ProjectTestUtils.runJasmin(result, expectedOutput);
+        ProjectTestUtils.runJasmin(my_result, expectedOutput);
     }
 
     public static void testOllirToJasmin(String resource) {
