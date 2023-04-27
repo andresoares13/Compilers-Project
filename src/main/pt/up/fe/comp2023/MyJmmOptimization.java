@@ -10,6 +10,7 @@ import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class MyJmmOptimization implements JmmOptimization {
@@ -95,37 +96,6 @@ public class MyJmmOptimization implements JmmOptimization {
 
         //return new OllirResult(ollirCode,jmmSemanticsResult.getConfig());
         return new OllirResult(jmmSemanticsResult,ollirCode,jmmSemanticsResult.getReports());
-    }
-
-    static class VarState {
-        public boolean isInitialized; //is initialized
-        public Type type; //type of var
-        public String name; //name of var
-        public boolean isOpen; //is open for reuse
-        public boolean isConstant; //is constant
-        public String value;
-        public boolean isTemporary;
-        public boolean isRead = false;
-        public boolean isWritten = false;
-
-        public VarState(boolean init, Type type, String name, boolean open, boolean constant, boolean temporary){
-            isInitialized = init;
-            this.type = type;
-            this.name = name;
-            isOpen = open;
-            isConstant = constant;
-            isTemporary = temporary;
-            value = "";
-        }
-        public VarState(boolean init, Type type, String name, boolean open, boolean constant, boolean temporary, String value){
-            isInitialized =init;
-            this.type =type;
-            this.name =name;
-            this.isOpen =open;
-            isConstant =constant;
-            isTemporary = temporary;
-            this.value = value;
-        }
     }
     String typeToOllir(Type type){
         StringBuilder sb=new StringBuilder();
@@ -908,9 +878,41 @@ public class MyJmmOptimization implements JmmOptimization {
         public ArrayList<String> previousStatements = null;
         public ArrayList<String> branchingConstants = null;
     }
+    static class VarState {
+        public boolean isInitialized; //is initialized
+        public Type type; //type of var
+        public String name; //name of var
+        public boolean isOpen; //is open for reuse
+        public boolean isConstant; //is constant
+        public String value;
+        public boolean isTemporary;
+        public boolean isRead = false;
+        public boolean isWritten = false;
+        public boolean isUnresolved = false;
+        public VarState parent = null;
+        public List<Stringable> dependants;
+        public VarState(boolean init, Type type, String name, boolean open, boolean constant, boolean temporary){
+            isInitialized = init;
+            this.type = type;
+            this.name = name;
+            isOpen = open;
+            isConstant = constant;
+            isTemporary = temporary;
+            value = "";
+        }
+        public VarState(boolean init, Type type, String name, boolean open, boolean constant, boolean temporary, String value){
+            isInitialized =init;
+            this.type =type;
+            this.name =name;
+            this.isOpen =open;
+            isConstant =constant;
+            isTemporary = temporary;
+            this.value = value;
+        }
+    }
     public class VarContext{
         Map<String, VarState> map = new HashMap<>();
-        Map<String,VarState> duplicate() {
+        Map<String,VarState> duplicateUnresolved() {
             VarContext ret = new VarContext();
             for (Map.Entry<String, VarState> p : map.entrySet()) {
                 VarState dupe = new VarState(
@@ -918,10 +920,14 @@ public class MyJmmOptimization implements JmmOptimization {
                         new Type(p.getValue().type.getName(), p.getValue().type.isArray()),
                         p.getValue().name,
                         p.getValue().isOpen,
-                        p.getValue().isConstant,
+                        p.getValue().isConstant, 
                         p.getValue().isTemporary,
                         p.getValue().value
                 );
+                dupe.parent = p.getValue();
+                if(p.getValue().isConstant){
+                    dupe.isUnresolved = true;
+                }
                 ret.map.put(p.getKey(), dupe);
             }
             return ret.map; //TODO
@@ -968,8 +974,16 @@ public class MyJmmOptimization implements JmmOptimization {
                 e.setValue(new VarState(isInitalized,oVar.type,oVar.name,oVar.isOpen,isConstant,oVar.isTemporary,value));
             }
             */
-
         }
 
+    }
+
+    public class Stringable{
+        String string = "";
+        List<Stringable> dependants, dependencies;
+        Function<VarState,String> f = null;
+        Stringable(String s){
+            this.string =s;
+        }
     }
 }
