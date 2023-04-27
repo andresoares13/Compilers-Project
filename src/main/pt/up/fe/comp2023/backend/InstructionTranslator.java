@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InstructionTranslator {
-    private int stackCounter = 1;
+    private int stackCounter = 0;
+    private int max_stackCounter = 0;
     private final int indentation = 1;
     private int labelCounter = 1;
 
@@ -363,7 +364,7 @@ public class InstructionTranslator {
     }
 
     private String getCorrespondingLoad(Element element, Method method) {
-        //stackCounter++;
+        manageStack(1);
         if (element.isLiteral()) {
             LiteralElement literalElement = (LiteralElement) element;
 
@@ -410,7 +411,6 @@ public class InstructionTranslator {
                     return getIndentation() + "iload" + spacer + operandDescriptor.getVirtualReg();
                 }
                 case ARRAYREF -> {
-                    //stackCounter++;
                     StringBuilder jasminInstruction = new StringBuilder();
                     jasminInstruction.append(getIndentation()).append("aload").append(spacer).append(operandDescriptor.getVirtualReg());
                     if (element instanceof ArrayOperand) {
@@ -427,7 +427,6 @@ public class InstructionTranslator {
                     return jasminInstruction.toString();
                 }
                 case CLASS, OBJECTREF, THIS, STRING -> {
-                    //stackCounter++;
                     return getIndentation() + "aload" + spacer + operandDescriptor.getVirtualReg();
                 }
                 default -> {
@@ -438,6 +437,7 @@ public class InstructionTranslator {
     }
 
     private String getCorrespondingStore(Element element, Method method) {
+        manageStack(-1);
         if (element.isLiteral()) {
             return "";
         } else {
@@ -491,8 +491,15 @@ public class InstructionTranslator {
         return "\t".repeat(indentation);
     }
 
+    private void manageStack(int stack){
+        stackCounter += stack;
+
+        if(stackCounter > max_stackCounter)
+            max_stackCounter = stackCounter;
+    }
+
     public int getStackCounter() {
-        return stackCounter;
+        return max_stackCounter;
     }
 
 }
