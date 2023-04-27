@@ -26,8 +26,8 @@ public class Launcher {
 
         // Parse arguments as a map with predefined options
         var config = parseArgs(args);
-        //config.put("registerAllocation", "3");
-        //config.put("optimize", "true");
+        config.put("registerAllocation", "3");
+        config.put("optimize", "true");
         // Get input file
         File inputFile = new File(config.get("inputFile"));
 
