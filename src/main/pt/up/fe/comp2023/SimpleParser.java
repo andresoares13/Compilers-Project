@@ -55,7 +55,7 @@ public class SimpleParser implements JmmParser {
                     .map(root -> new JmmParserResult(root, Collections.emptyList(), config))
                     // If there were errors, create an error JmmParserResult without root node
                     .orElseGet(() -> JmmParserResult.newError(new Report(ReportType.WARNING, Stage.SYNTATIC, -1,
-                            "There were syntax errors during parsing, terminating")));
+                            "There were syntax errors during parsing, terminating"),config));
 
             var errorsNum = parser.getNumberOfSyntaxErrors();
             if (errorsNum > 0){
@@ -63,12 +63,11 @@ public class SimpleParser implements JmmParser {
                 result.getReports().add(error);
             }
 
-
             return result;
 
         } catch (Exception e) {
             // There was an uncaught exception during parsing, create an error JmmParserResult without root node
-            return JmmParserResult.newError(Report.newError(Stage.SYNTATIC, -1, -1, "Exception during parsing", e));
+            return JmmParserResult.newError(Report.newError(Stage.SYNTATIC, -1, -1, "Exception during parsing", e),config);
         }
     }
 }

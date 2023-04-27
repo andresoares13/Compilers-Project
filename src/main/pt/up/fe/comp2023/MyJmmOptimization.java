@@ -9,7 +9,6 @@ import pt.up.fe.comp.jmm.ast.JmmNode;
 import pt.up.fe.comp.jmm.ollir.JmmOptimization;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 
-import javax.swing.plaf.nimbus.State;
 import java.util.*;
 import java.util.stream.Collectors;
 
