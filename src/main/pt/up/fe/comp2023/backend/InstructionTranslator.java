@@ -308,7 +308,7 @@ public class InstructionTranslator {
         Element leftElement = instruction.getLeftOperand();
         Element rightElement = instruction.getRightOperand();
 
-        if(!(operationType == OperationType.ADD)) {
+        if(operationType != OperationType.ADD && operationType != OperationType.LTH) {
             jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
             jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
             jasminInstruction.append(getIndentation());
@@ -316,21 +316,38 @@ public class InstructionTranslator {
 
         switch (operationType) {
             case ADD -> {
-                if (leftElement.isLiteral() && !rightElement.isLiteral()) {
+                if (leftElement.isLiteral() && !rightElement.isLiteral())
                     return iinc((LiteralElement) leftElement, (Operand) rightElement, method);
-                } else if (!leftElement.isLiteral() && rightElement.isLiteral()) {
+                if (!leftElement.isLiteral() && rightElement.isLiteral())
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method);
-                } else
-                    jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+
+                jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
                 jasminInstruction.append(getIndentation());
                 jasminInstruction.append("iadd");
+
             }
             case SUB -> jasminInstruction.append("isub");
             case MUL -> jasminInstruction.append("imul");
             case DIV -> jasminInstruction.append("idiv");
             case AND, ANDB -> jasminInstruction.append("iand");
-            case LTH -> jasminInstruction.append(get_if("if_icmplt "));
+            case LTH -> {
+                if(rightElement.isLiteral()){
+                    LiteralElement literalElement = (LiteralElement) rightElement;
+
+                    int literal = Integer.parseInt(JasminUtils.trimLiteral(literalElement.getLiteral()));
+                    if(literal == 0) {
+                        jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                        jasminInstruction.append(getIndentation());
+                        jasminInstruction.append(get_if("iflt "));
+                        break;
+                    }
+                }
+                jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+                jasminInstruction.append(getIndentation());
+                jasminInstruction.append(get_if("if_icmplt "));
+            }
             default -> {
             }
         }
@@ -395,6 +412,7 @@ public class InstructionTranslator {
         } else {
             Operand operand = (Operand) element;
 
+            // check registers available, if none, use the oldest one
             Descriptor operandDescriptor = method.getVarTable().get(operand.getName());
             if (operandDescriptor.getVirtualReg() < 0) {
                 return "";
