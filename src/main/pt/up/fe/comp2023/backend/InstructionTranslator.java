@@ -3,31 +3,38 @@ package pt.up.fe.comp2023.backend;
 import org.specs.comp.ollir.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class InstructionTranslator {
-    private int stackCounter = 1;
-    private int indentation = 1;
+    private int stackCounter = 0;
+    private int max_stackCounter = 0;
+    private final int indentation = 1;
+    private int labelCounter = 1;
 
     public String translateInstruction(Instruction instruction, Method method) {
-        StringBuilder instructionTranslated = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         InstructionType instType = instruction.getInstType();
         stackCounter = 1;
 
+        List<String> labels = method.getLabels(instruction);
+        for(String l : labels)
+            stringBuilder.append(getIndentation()).append(l).append(":\n");
+
         switch (instType) {
-            case CALL -> instructionTranslated.append(translateInstruction((CallInstruction) instruction, method));
-            case GOTO -> instructionTranslated.append(translateInstruction((GotoInstruction) instruction, method));
-            case NOPER -> instructionTranslated.append(translateInstruction((SingleOpInstruction) instruction, method));
-            case ASSIGN -> instructionTranslated.append(translateInstruction((AssignInstruction) instruction, method));
-            case BRANCH -> instructionTranslated.append(translateInstruction((CondBranchInstruction) instruction, method));
-            case RETURN -> instructionTranslated.append(translateInstruction((ReturnInstruction) instruction, method));
-            case GETFIELD -> instructionTranslated.append(translateInstruction((GetFieldInstruction) instruction, method));
-            case PUTFIELD -> instructionTranslated.append(translateInstruction((PutFieldInstruction) instruction, method));
-            case UNARYOPER -> instructionTranslated.append(translateInstruction((UnaryOpInstruction) instruction, method));
-            case BINARYOPER -> instructionTranslated.append(translateInstruction((BinaryOpInstruction) instruction, method));
+            case CALL -> stringBuilder.append(translateInstruction((CallInstruction) instruction, method));
+            case GOTO -> stringBuilder.append(translateInstruction((GotoInstruction) instruction, method));
+            case NOPER -> stringBuilder.append(translateInstruction((SingleOpInstruction) instruction, method));
+            case ASSIGN -> stringBuilder.append(translateInstruction((AssignInstruction) instruction, method));
+            case BRANCH -> stringBuilder.append(translateInstruction((CondBranchInstruction) instruction, method));
+            case RETURN -> stringBuilder.append(translateInstruction((ReturnInstruction) instruction, method));
+            case GETFIELD -> stringBuilder.append(translateInstruction((GetFieldInstruction) instruction, method));
+            case PUTFIELD -> stringBuilder.append(translateInstruction((PutFieldInstruction) instruction, method));
+            case UNARYOPER -> stringBuilder.append(translateInstruction((UnaryOpInstruction) instruction, method));
+            case BINARYOPER -> stringBuilder.append(translateInstruction((BinaryOpInstruction) instruction, method));
             default -> {}
         }
 
-        return instructionTranslated.toString();
+        return stringBuilder.toString();
     }
 
     // CALL
@@ -125,7 +132,7 @@ public class InstructionTranslator {
                 if(elementType == ElementType.CLASS || elementType == ElementType.OBJECTREF) {
                     jasminInstruction.append(getIndentation()).append("new ").append(caller.getName()).append("\n");
                     jasminInstruction.append(getIndentation()).append("dup");
-                } else if (elementType == ElementType.ARRAYREF) { // array does not need a dup
+                } else if (elementType == ElementType.ARRAYREF) {
                     ArrayList<Element> operands = instruction.getListOfOperands();
                     if (operands.size() < 1) {
                         return "";
@@ -236,9 +243,7 @@ public class InstructionTranslator {
                 jasminInstruction.append(getCorrespondingLoad(dest, method)).append("\n");
                 jasminInstruction.append(getIndentation()).append("getfield ");
             }
-            case CLASS -> {
-                jasminInstruction.append(getIndentation()).append("getstatic ");
-            }
+            case CLASS -> jasminInstruction.append(getIndentation()).append("getstatic ");
             default -> {}
         }
 
@@ -268,9 +273,7 @@ public class InstructionTranslator {
                 jasminInstruction.append(getCorrespondingLoad(newValue, method)).append("\n");
                 jasminInstruction.append(getIndentation()).append("putfield ");
             }
-            case CLASS -> {
-                jasminInstruction.append(getIndentation()).append("putstatic ");
-            }
+            case CLASS -> jasminInstruction.append(getIndentation()).append("putstatic ");
             default -> {}
         }
 
@@ -285,26 +288,15 @@ public class InstructionTranslator {
 
     // UNARYOPER (as I want)
     public String translateInstruction(UnaryOpInstruction instruction, Method method) {
-        StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
         OperationType operationType = operation.getOpType();
         Element element = instruction.getOperand();
 
-        jasminInstruction.append(getCorrespondingLoad(element, method)).append("\n");
-
-        switch (operationType) {
-            case NOT -> jasminInstruction.append("not\n");
-            case NOTB -> jasminInstruction.append("notb\n");
-            default -> {}
+        if (operationType == OperationType.NOT || operationType == OperationType.NOTB) { // confirm if notb is not used
+            return getCorrespondingLoad(element, method) + "\n" + getIndentation() + get_if("ifeq ");
         }
 
-        // can be like this??
-        //iload a
-        //iconst_m1
-        //ixor
-        //istore a
-
-        return jasminInstruction.toString();
+        return "";
     }
 
     // BINARYOPER
@@ -316,40 +308,80 @@ public class InstructionTranslator {
         Element leftElement = instruction.getLeftOperand();
         Element rightElement = instruction.getRightOperand();
 
-        jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
-        jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
-        jasminInstruction.append(getIndentation());
+        if(operationType != OperationType.ADD && operationType != OperationType.LTH) {
+            jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+            jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+            jasminInstruction.append(getIndentation());
+        }
 
         switch (operationType) {
-            case ADD:
+            case ADD -> {
+                if (leftElement.isLiteral() && !rightElement.isLiteral())
+                    return iinc((LiteralElement) leftElement, (Operand) rightElement, method);
+                if (!leftElement.isLiteral() && rightElement.isLiteral())
+                    return iinc((LiteralElement) rightElement, (Operand) leftElement, method);
+
+                jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+                jasminInstruction.append(getIndentation());
                 jasminInstruction.append("iadd");
-                break;
-            case SUB:
-                jasminInstruction.append("isub");
-                break;
-            case MUL:
-                jasminInstruction.append("imul");
-                break;
-            case DIV:
-                jasminInstruction.append("idiv");
-                break;
-            case AND, ANDB:
-                jasminInstruction.append("iand");
-                break;
-            case OR, ORB:
-                jasminInstruction.append("ior");
-                break;
-            case LTH:
-                // todo
-                break;
-            default:
-                break;
+
+            }
+            case SUB -> jasminInstruction.append("isub");
+            case MUL -> jasminInstruction.append("imul");
+            case DIV -> jasminInstruction.append("idiv");
+            case AND, ANDB -> jasminInstruction.append("iand");
+            case LTH -> {
+                if(rightElement.isLiteral()){
+                    LiteralElement literalElement = (LiteralElement) rightElement;
+
+                    int literal = Integer.parseInt(JasminUtils.trimLiteral(literalElement.getLiteral()));
+                    if(literal == 0) {
+                        jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                        jasminInstruction.append(getIndentation());
+                        jasminInstruction.append(get_if("iflt "));
+                        break;
+                    }
+                }
+                jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+                jasminInstruction.append(getIndentation());
+                jasminInstruction.append(get_if("if_icmplt "));
+            }
+            default -> {
+            }
         }
         return jasminInstruction.toString();
     }
 
+    private String iinc(LiteralElement literalElement, Operand operand, Method method) {
+        StringBuilder jasminInstruction = new StringBuilder();
+        Descriptor descriptor = method.getVarTable().get(operand.getName());
+
+        jasminInstruction.append("iinc ").append(descriptor.getVirtualReg());
+        jasminInstruction.append(" ").append(JasminUtils.trimLiteral(literalElement.getLiteral()));
+        return getIndentation() + jasminInstruction + "\n" + getCorrespondingLoad(operand, method);
+    }
+
+    private String get_if(String if_instruction) {
+        StringBuilder if_body = new StringBuilder();
+
+        String l1 = "label" + labelCounter;
+        String l2 = "label" + (labelCounter + 1);
+
+        labelCounter += 2;
+
+        if_body.append(if_instruction).append(l1).append("\n");
+        if_body.append(getIndentation()).append("iconst_0\n");
+        if_body.append(getIndentation()).append("goto ").append(l2).append("\n");
+        if_body.append(getIndentation()).append(l1).append(":\n");
+        if_body.append(getIndentation()).append("iconst_1\n");
+        if_body.append(getIndentation()).append(l2).append(":\n");
+        return if_body.toString();
+    }
+
     private String getCorrespondingLoad(Element element, Method method) {
-        //stackCounter++;
+        manageStack(1);
         if (element.isLiteral()) {
             LiteralElement literalElement = (LiteralElement) element;
 
@@ -392,7 +424,6 @@ public class InstructionTranslator {
                     return getIndentation() + "iload" + spacer + operandDescriptor.getVirtualReg();
                 }
                 case ARRAYREF -> {
-                    //stackCounter++;
                     StringBuilder jasminInstruction = new StringBuilder();
                     jasminInstruction.append(getIndentation()).append("aload").append(spacer).append(operandDescriptor.getVirtualReg());
                     if (element instanceof ArrayOperand) {
@@ -409,7 +440,6 @@ public class InstructionTranslator {
                     return jasminInstruction.toString();
                 }
                 case CLASS, OBJECTREF, THIS, STRING -> {
-                    //stackCounter++;
                     return getIndentation() + "aload" + spacer + operandDescriptor.getVirtualReg();
                 }
                 default -> {
@@ -420,6 +450,7 @@ public class InstructionTranslator {
     }
 
     private String getCorrespondingStore(Element element, Method method) {
+        manageStack(-1);
         if (element.isLiteral()) {
             return "";
         } else {
@@ -473,8 +504,15 @@ public class InstructionTranslator {
         return "\t".repeat(indentation);
     }
 
+    private void manageStack(int stack){
+        stackCounter += stack;
+
+        if(stackCounter > max_stackCounter)
+            max_stackCounter = stackCounter;
+    }
+
     public int getStackCounter() {
-        return stackCounter;
+        return max_stackCounter;
     }
 
 }

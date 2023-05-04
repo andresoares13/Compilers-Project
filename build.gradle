@@ -44,5 +44,7 @@ sourceSets {
 mainClassName = 'pt.up.fe.comp2023.Launcher'
 
 dependencies {
+
+    testImplementation 'junit:junit:4.13.1'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }

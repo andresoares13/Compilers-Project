@@ -32,10 +32,8 @@ public class MethodDefinitionGenerator {
 
 
         if(!method.isConstructMethod()) {
-            // .limit stack 99 (for now)
-            methodDefinition.append("\t.limit stack 99").append("\n");
-            // .limit locals 99 (for now)
-            methodDefinition.append("\t.limit locals 99").append("\n");
+            methodDefinition.append("\t.limit stack ").append(instructionTranslator.getStackCounter()).append("\n");
+            methodDefinition.append("\t.limit locals ").append(getLocalsLimit()).append("\n");
         }
 
         methodDefinition.append(instructions);
@@ -87,6 +85,6 @@ public class MethodDefinitionGenerator {
         if(method == null)
             return 0;
 
-        return 99;
+        return this.method.getVarTable().values().stream().mapToInt(Descriptor::getVirtualReg).max().orElse(0) + 1;
     }
 }
