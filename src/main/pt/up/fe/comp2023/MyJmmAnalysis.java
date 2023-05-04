@@ -28,7 +28,7 @@ public class MyJmmAnalysis implements JmmAnalysis {
 
 
 
-        Map<String, String> config = new HashMap<>();
+        Map<String, String> config = jmmParserResult.getConfig();
 
         for(SemanticAnalyser analyser : analysers) {
             reports.addAll(analyser.getReports());

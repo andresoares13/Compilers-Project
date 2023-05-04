@@ -26,7 +26,8 @@ public class Launcher {
 
         // Parse arguments as a map with predefined options
         var config = parseArgs(args);
-
+        config.put("registerAllocation", "3");
+        config.put("optimize", "true");
         // Get input file
         File inputFile = new File(config.get("inputFile"));
 
@@ -57,7 +58,8 @@ public class Launcher {
 
 
         TestUtils.noErrors(analysisResult.getReports());
-
+        //analysisResult.getConfig().put("registerAllocation", "3");
+        //analysisResult.getConfig().put("optimize", "true");
         OllirResult ollir = new MyJmmOptimization().toOllir(analysisResult);
         System.out.println(ollir.getOllirCode());
 
