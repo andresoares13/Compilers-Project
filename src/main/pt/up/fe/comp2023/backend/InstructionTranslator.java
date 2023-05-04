@@ -412,7 +412,6 @@ public class InstructionTranslator {
         } else {
             Operand operand = (Operand) element;
 
-            // check registers available, if none, use the oldest one
             Descriptor operandDescriptor = method.getVarTable().get(operand.getName());
             if (operandDescriptor.getVirtualReg() < 0) {
                 return "";
@@ -422,10 +421,6 @@ public class InstructionTranslator {
 
             switch (operandDescriptor.getVarType().getTypeOfElement()) {
                 case INT32, BOOLEAN -> {
-                    if(((Operand) element).getName().equals("true"))
-                        return getIndentation() + "iconst_1";
-                    if(((Operand) element).getName().equals("false"))
-                        return getIndentation() + "iconst_0";
                     return getIndentation() + "iload" + spacer + operandDescriptor.getVirtualReg();
                 }
                 case ARRAYREF -> {
