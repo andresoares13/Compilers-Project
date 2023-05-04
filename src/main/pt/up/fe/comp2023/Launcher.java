@@ -62,11 +62,13 @@ public class Launcher {
         //analysisResult.getConfig().put("optimize", "true");
         OllirResult ollir = new MyJmmOptimization().toOllir(analysisResult);
         System.out.println(ollir.getOllirCode());
+        OllirResult ollir2 = new MyJmmOptimization().optimize(ollir);
+        System.out.println(ollir2.getOllirCode());
 
         //table.printImports();
         //table.printVars();
 
-        JasminResult jasminResult = new JmmBackend().toJasmin(ollir);
+        JasminResult jasminResult = new JmmBackend().toJasmin(ollir2);
         System.out.println(jasminResult.getJasminCode());
         //System.out.println(jasminResult.runWithFullOutput().getOutput());
         //var result = TestUtils.backend(ollir);

@@ -155,7 +155,7 @@ public class Cpf5_Optimizations {
                 actualNumReg,
                 optimized);
 
-        CpUtils.assertTrue("Expected number of locals in 'soManyRegisters' to be <= than " + expectedNumReg,
+        CpUtils.assertTrue("Expected number of locals in 'soManyRegisters' to be <= than " + expectedNumReg + "   " + actualNumReg,
                 actualNumReg <= expectedNumReg,
                 optimized);
     }

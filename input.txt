@@ -1,12 +1,16 @@
-import io;
-
-class A {
-
-	int a;
-
-    public static void main(String[] args){
-        int a;
-        a = 10;
-        io.print(10);
+class RegAlloc {
+    public int soManyRegisters(int arg){
+       int a;
+       int b;
+       int c;
+       int d;
+       a = 0;
+       b = a;
+       c = b;
+       d = c;
+       return d;
     }
+
+	public static void main(String[] args) {
+	}
 }
