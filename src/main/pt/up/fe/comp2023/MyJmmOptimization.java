@@ -197,7 +197,7 @@ public class MyJmmOptimization implements JmmOptimization {
         var.isOpen = true;
     }
     StringableResult expressionVisitor(JmmNode node, JmmSemanticsResult semanticsResult, VarContext localVarsState){
-        LinkedList<Object> previousStatements = new LinkedList<>();
+        LinkedList<Stringable> previousStatements = new LinkedList<>();
         ArrayList<VarState> previousReleases = new ArrayList<>();
         Object result = "undefined";
         boolean isConstant = false, resultIsString = true;
@@ -293,8 +293,9 @@ public class MyJmmOptimization implements JmmOptimization {
                     previousReleases.add(tmp);
 
                     previousStatements.add(
-                            tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " "
-                                    + exp1.result + " " + op + typeToOllir(resultType) + " " + exp2.result + ";\n"
+                            new Stringable(
+                                tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " "
+                                    + exp1.result + " " + op + typeToOllir(resultType) + " " + exp2.result + ";\n")
                     );
                     result = tmp.name + typeToOllir(tmp.type);
                 }
@@ -321,7 +322,9 @@ public class MyJmmOptimization implements JmmOptimization {
                     var tmp=addTemporaryVariable(localVarsState,new Type("int",false));
                     previousReleases.add(tmp);
                     String target = tmp.name + typeToOllir(tmp.type);
-                    previousStatements.add(target + " :=.i32 " + result + ";\n");
+                    previousStatements.add(
+                            new Stringable(target + " :=.i32 " + result + ";\n")
+                    );
                     result = target;
                 }
                 resultType = new Type("int",false);
@@ -333,7 +336,9 @@ public class MyJmmOptimization implements JmmOptimization {
                 previousReleases = expression.freeVars;
                 var tmp = addTemporaryVariable(localVarsState,ollirToType(".i32"));
                 previousReleases.add(tmp);
-                previousStatements.add(tmp.name + typeToOllir(tmp.type)+" :=.i32 arraylength(" + expression.result + ").i32;\n");
+                previousStatements.add(
+                        new Stringable(tmp.name + typeToOllir(tmp.type)+" :=.i32 arraylength(" + expression.result + ").i32;\n")
+                );
                 result = tmp.name + typeToOllir(tmp.type);
                 resultType = new Type("int",false);
                 break;
@@ -387,7 +392,9 @@ public class MyJmmOptimization implements JmmOptimization {
                     if(node.getJmmChild(i).getKind().equals("IndexOp")){
                         var tmp = addTemporaryVariable(localVarsState,ollirToType(expressionResult.result));
                         previousReleases.add(tmp);
-                        previousStatements.add(tmp.name +typeToOllir(tmp.type)+" :="+typeToOllir(tmp.type) + " " + expressionResult.result + ";\n");
+                        previousStatements.add(
+                                new Stringable(tmp.name +typeToOllir(tmp.type)+" :="+typeToOllir(tmp.type) + " " + expressionResult.result + ";\n")
+                        );
                         arguments.add(tmp.name +typeToOllir(tmp.type));
                     }else {
                         arguments.add(expressionResult.result);
@@ -399,8 +406,10 @@ public class MyJmmOptimization implements JmmOptimization {
                 } else {
                     var tmp = addTemporaryVariable(localVarsState, resultType);
                     previousReleases.add(tmp);
-                    previousStatements.add(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) +
-                            " invoke" + invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size() > 0 ? "\", " : "\"") + arguments.stream().reduce((String s1, String s2) -> s1 + ", " + s2).orElse("") + ")" + typeToOllir(resultType) + ";\n");
+                    previousStatements.add(
+                            new Stringable(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) +
+                                " invoke" + invokeType + "(" + target + ", \"" + node.get("name") + (arguments.size() > 0 ? "\", " : "\"") + arguments.stream().reduce((String s1, String s2) -> s1 + ", " + s2).orElse("") + ")" + typeToOllir(resultType) + ";\n")
+                    );
                     result = tmp.name + typeToOllir(tmp.type);
                 }
                 break;
@@ -416,8 +425,12 @@ public class MyJmmOptimization implements JmmOptimization {
             case "NewFunc": { //TODO if in VarDeclareStatement, use var name;
                 var tmp = addTemporaryVariable(localVarsState, new Type(node.get("name"), false));
                 previousReleases.add(tmp);
-                previousStatements.add(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " new(" + tmp.type.getName() + ")" + typeToOllir(tmp.type) + ";\n");
-                previousStatements.add("invokespecial(" + tmp.name + typeToOllir(tmp.type) + ", \"<init>\").V;\n");
+                previousStatements.add(
+                        new Stringable(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " new(" + tmp.type.getName() + ")" + typeToOllir(tmp.type) + ";\n")
+                );
+                previousStatements.add(
+                        new Stringable("invokespecial(" + tmp.name + typeToOllir(tmp.type) + ", \"<init>\").V;\n")
+                );
                 result = tmp.name + typeToOllir(tmp.type);
                 resultType = new Type(node.get("name"), false);
                 break;
@@ -443,7 +456,9 @@ public class MyJmmOptimization implements JmmOptimization {
                     sr.addFreeableVar(tmp);
                     sr.previousStatements = sr.watchingExpr.previousStatements;
                     sr.freeVars.addAll(sr.watchingExpr.freeVars);
-                    sr.previousStatements.add(tmp.name + ".bool" + " :=.bool !.bool " + sr.watchingExpr.result + ";\n");
+                    sr.previousStatements.add(
+                            new Stringable(tmp.name + ".bool" + " :=.bool !.bool " + sr.watchingExpr.result + ";\n")
+                    );
                     sr.type = new Type("boolean", false);
                     return tmp.name + ".bool";
                 },expression,localVarsState);
@@ -478,7 +493,9 @@ public class MyJmmOptimization implements JmmOptimization {
                 if (varState.a) { //is Field
                     var tmp = addTemporaryVariable(localVarsState,varState.b.type);
                     previousReleases.add(tmp);
-                    previousStatements.add(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " " + "getfield(this," + varState.b.name + typeToOllir(varState.b.type) + ")" + typeToOllir(varState.b.type) + ";\n");
+                    previousStatements.add(
+                            new Stringable(tmp.name + typeToOllir(tmp.type) + " :=" + typeToOllir(tmp.type) + " " + "getfield(this," + varState.b.name + typeToOllir(varState.b.type) + ")" + typeToOllir(varState.b.type) + ";\n")
+                    );
                     result = tmp.name + typeToOllir(tmp.type);
                     resultType = tmp.type;
                 } else {
@@ -505,9 +522,11 @@ public class MyJmmOptimization implements JmmOptimization {
                     }
                     if (!varState.b.isInitialized) { //not initialized
                         previousStatements.add(
-                                varState.b.name + typeToOllir(varState.b.type)
-                                        + " :=" + typeToOllir(varState.b.type)
-                                        + " " + getTypeDefaultValue(varState.b.type) + ";\n"
+                                new Stringable(
+                                    varState.b.name + typeToOllir(varState.b.type)
+                                    + " :=" + typeToOllir(varState.b.type)
+                                    + " " + getTypeDefaultValue(varState.b.type) + ";\n"
+                                )
                         );
                     }
                     result = varState.b.name + typeToOllir(varState.b.type);
@@ -532,10 +551,8 @@ public class MyJmmOptimization implements JmmOptimization {
             return new StringableResult( (String)result,previousStatements, previousReleases,isConstant,resultType);
         return new StringableResult( (Function<StringableResult,String>) result,previousStatements, previousReleases,isConstant,resultType);
     }
-    StatementVisitResult statementsVisitor(List<JmmNode> nodeList, JmmSemanticsResult semanticsResult, VarContext localVarsState, String methodName){
-        ArrayList<Object> stringBuilder = new ArrayList<>();
-        ArrayList<String> previousStatements = new ArrayList<>();
-        ArrayList<String> branchingConstants = new ArrayList<>();
+    StringableStatementResult statementsVisitor(List<JmmNode> nodeList, JmmSemanticsResult semanticsResult, VarContext localVarsState, String methodName){
+        LinkedList<Stringable> result = new LinkedList<>();
         for(JmmNode child : nodeList){
             switch (child.getKind()) {
                 case "VarDeclareStatement": {
@@ -543,8 +560,7 @@ public class MyJmmOptimization implements JmmOptimization {
                     var expression = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState);
                     state.b.isConstant = false;
                     state.b.isWritten = true;
-                    for (Object s : expression.previousStatements)
-                        stringBuilder.add(s);
+                    result.addAll(expression.previousStatements);
                     for(VarState openVar : expression.freeVars)
                         releaseTemporaryVariable(openVar);
                     state.b.isInitialized = true;
@@ -552,16 +568,15 @@ public class MyJmmOptimization implements JmmOptimization {
                         break; // if lhs == rhs, skip instruction.
                     }
                     if (state.a){
-                        stringBuilder.add("putfield(this, " + state.b.name + typeToOllir(state.b.type) + ", " + expression.result + ").V;\n");
+                        result.add( new Stringable("putfield(this, " + state.b.name + typeToOllir(state.b.type) + ", " + expression.result + ").V;\n"));
                         break;
                     }
                     if(expression.isConstant && oFlagValue){
                         state.b.isConstant = true;
                         state.b.isInitialized = false;
                         state.b.value = expression.result.substring(0,expression.result.lastIndexOf("."));
-                        branchingConstants.add(state.b.name + typeToOllir(state.b.type) +" :=" + typeToOllir(state.b.type) + " " + state.b.value + typeToOllir(state.b.type) + ";\n");
                     }else{
-                        stringBuilder.add(state.b.name+typeToOllir(state.b.type)+" :="+typeToOllir(state.b.type)+" "+expression.result+";\n");
+                        result.add(new Stringable(state.b.name+typeToOllir(state.b.type)+" :="+typeToOllir(state.b.type)+" "+expression.result+";\n"));
                     }
                     //if(! (getOllirType(expression.a).getName().equals(state.b.getName()) && getOllirType(expression.a).isArray() == state.b.isArray()))
                     //throw new RuntimeException("Assigning mismatching type.");
@@ -572,35 +587,31 @@ public class MyJmmOptimization implements JmmOptimization {
                         child=child.getJmmChild(0);
                     if(child.getJmmChild(0).getKind().matches("(NewFunc|FuncOp)")) { //only FuncOp is not a NoOp. TODO confirm newArr is not required.
                         var statements = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState);
-                        for (Object s : statements.previousStatements)
-                            stringBuilder.add(s);
-                        if (!statements.result.equals(""))
-                            stringBuilder.add(statements.result+";\n");
+                        result.addAll(statements.previousStatements);
+                        if (!statements.result.equals("")) //TODO
+                            result.add(new Stringable(statements.result+";\n"));
                         for (VarState openVar : statements.freeVars)
                             releaseTemporaryVariable(openVar);
                     }
                     break;
                 }
                 case "Brackets": {
-                    StatementVisitResult res = statementsVisitor(child.getChildren(), semanticsResult, localVarsState, methodName);
-                    stringBuilder.addAll(res.result);
-                    branchingConstants = res.branchingConstants;
-                    previousStatements = res.previousStatements;
+                    StringableStatementResult res = statementsVisitor(child.getChildren(), semanticsResult, localVarsState, methodName);
+                    result.addAll(res.getResultStatements());
                     break;
                 }
                 case "ArrayAccess": { //TODO constant propagation.
                     var arrayVar = getVariableState(child.get("name"), localVarsState);
                     StringableResult expIndex = expressionVisitor(child.getJmmChild(0), semanticsResult, localVarsState),
                             expValue = expressionVisitor(child.getJmmChild(1), semanticsResult, localVarsState);
-                    for (Object s : expIndex.previousStatements)
-                        stringBuilder.add(s);
-                    for (Object s : expValue.previousStatements)
-                        stringBuilder.add(s);
+                    result.addAll(expIndex.previousStatements);
+                    result.addAll(expValue.previousStatements);
                     String target;
                     target = expIndex.result;
-                    stringBuilder.add(arrayVar.b.name+"["+target+"]"+typeToOllir(new Type(arrayVar.b.type.getName(), false))
+                    result.add( new Stringable(arrayVar.b.name+"["+target+"]"+typeToOllir(new Type(arrayVar.b.type.getName(), false))
                             + " :=" + typeToOllir(arrayVar.b.type)+" "
-                            + expValue.result+";\n");
+                            + expValue.result+";\n")
+                    );
                     for(VarState openVar : expIndex.freeVars)
                         releaseTemporaryVariable(openVar);
                     for(VarState openVar : expValue.freeVars)
@@ -610,18 +621,17 @@ public class MyJmmOptimization implements JmmOptimization {
                 case "IfElseStatement": {
                     var ifExpression = expressionVisitor(child.getJmmChild(0),semanticsResult,localVarsState);
                     if(ifExpression.isConstant && oFlagValue){
-                        StatementVisitResult stmtVisit;
+                        StringableStatementResult stmtVisit;
                         if(ifExpression.result.equals("1.bool")){ // skip branching and labels.
                             stmtVisit = statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(1))),semanticsResult,localVarsState,methodName);
                         }else{
                             stmtVisit = statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(2))),semanticsResult,localVarsState,methodName);
                         }
-                        stringBuilder.addAll(stmtVisit.previousStatements);
-                        stringBuilder.add(stmtVisit.result);
-                        branchingConstants.addAll(stmtVisit.branchingConstants);
+                        result.addAll(stmtVisit.previousStatements);
+                        result.addAll(stmtVisit.getResultStatements());
                         break;
                     }
-                    stringBuilder.addAll(ifExpression.previousStatements);
+                    result.addAll(ifExpression.previousStatements);
                     for(String s : localVarsState.keySet()){
                         VarState vs = localVarsState.get(s);
                         if(!vs.isConstant)
@@ -633,7 +643,7 @@ public class MyJmmOptimization implements JmmOptimization {
                                 return "";
                             },vs,null);
                         vs.callOnIfMerge.add(initialize_const);
-                        stringBuilder.add(initialize_const);
+                        result.add(initialize_const);
                     }
                     for(VarState openVar : ifExpression.freeVars)
                         releaseTemporaryVariable(openVar);
@@ -643,30 +653,28 @@ public class MyJmmOptimization implements JmmOptimization {
                     ArrayList<VarContext> branches = new ArrayList<>();
                     branches.add(duplicateVarsState(localVarsState));
                     branches.add(duplicateVarsState(localVarsState));
-                    StatementVisitResult s1,s2;
+                    StringableStatementResult s1,s2;
 
                     s1 = statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(1))), semanticsResult, branches.get(0), methodName);
-                    stringBuilder.addAll(s1.previousStatements);
+                    result.addAll(s1.previousStatements);
                     s2 = statementsVisitor(new ArrayList<>(Collections.singleton(child.getJmmChild(2))), semanticsResult, branches.get(1), methodName);
-                    stringBuilder.addAll(s2.previousStatements);
+                    result.addAll(s2.previousStatements);
 
-                    stringBuilder.add("if("+ifExpression.result+") goto ifbody_"+ifLabel+";\n");
-                    stringBuilder.addAll(s2.result);
-                    stringBuilder.addAll(s2.branchingConstants);
-                    stringBuilder.add("goto endif_"+ifLabel+";\n");
-                    stringBuilder.add("ifbody_"+ifLabel+":\n");
-                    stringBuilder.addAll(s1.result);
-                    stringBuilder.addAll(s1.branchingConstants);
-                    stringBuilder.add("endif_"+ifLabel+":\n"); //TODO append NoOp if last instruction in method.
+                    result.add(new Stringable("if("+ifExpression.result+") goto ifbody_"+ifLabel+";\n"));
+                    result.addAll(s2.getResultStatements());
+                    result.add(new Stringable("goto endif_"+ifLabel+";\n"));
+                    result.add(new Stringable("ifbody_"+ifLabel+":\n"));
+                    result.addAll(s1.getResultStatements());
+                    result.add(new Stringable("endif_"+ifLabel+":\n"));
                     mergeVarsState(localVarsState,branches);
                     break;
                 }
                 case "WhileStatement": {
                     VarContext dupe = duplicateVarsState(localVarsState);
-                    StringBuilder previousInitializers = new StringBuilder();
+                    List<Stringable> previousInitializers = new ArrayList<>();
                     int whileLabel = whileLabelCount;
                     whileLabelCount++;
-                    StatementVisitResult statementsVisit;
+                    StringableStatementResult statementsVisit;
                     boolean certainlyEnters = false;
                     StringableResult whileConditionExpression = expressionVisitor(child.getJmmChild(0),semanticsResult,dupe);
                     if(whileConditionExpression.isConstant && oFlagValue){
@@ -691,7 +699,7 @@ public class MyJmmOptimization implements JmmOptimization {
                         dupe=check.a;
                         for(String s:check.b) {
                             VarState varState = localVarsState.get(s);
-                            previousInitializers.append(varState.name+typeToOllir(varState.type)+" :="+typeToOllir(varState.type)+" "+varState.value+typeToOllir(varState.type)+";\n");
+                            previousInitializers.add(new Stringable(varState.name+typeToOllir(varState.type)+" :="+typeToOllir(varState.type)+" "+varState.value+typeToOllir(varState.type)+";\n"));
                             varState.isInitialized = true;
                             varState.isConstant = false;
                         }
@@ -736,14 +744,13 @@ public class MyJmmOptimization implements JmmOptimization {
                                 // leave_loop:
                             }
                         }
-                        stringBuilder.add(previousInitializers);
-                        stringBuilder.add("goto whilestart_"+whileLabel+";\n");
-                        stringBuilder.add("whilebody_"+whileLabel+":\n");
-                        stringBuilder.addAll(statementsVisit.result);
-                        stringBuilder.addAll(statementsVisit.branchingConstants);
-                        stringBuilder.add("whilestart_"+whileLabel+":\n");
-                        stringBuilder.addAll(statementsVisit.previousStatements);
-                        stringBuilder.add("if("+whileConditionExpression.result+") goto whilebody_"+whileLabel+";\n");
+                        result.addAll(previousInitializers);
+                        result.add(new Stringable("goto whilestart_"+whileLabel+";\n"));
+                        result.add(new Stringable("whilebody_"+whileLabel+":\n"));
+                        result.addAll(statementsVisit.getResultStatements());
+                        result.add(new Stringable("whilestart_"+whileLabel+":\n"));
+                        result.addAll(statementsVisit.previousStatements);
+                        result.add(new Stringable("if("+whileConditionExpression.result+") goto whilebody_"+whileLabel+";\n"));
                         for (VarState openVar : whileConditionExpression.freeVars)
                             releaseTemporaryVariable(openVar);
                     }
@@ -755,20 +762,16 @@ public class MyJmmOptimization implements JmmOptimization {
                 case "NewFunc": case "NegationOp": case "ParOp": case "Integer": case "Bool":
                 case "Identifier": case "This": {
                     var expression = expressionVisitor(child, semanticsResult, localVarsState);
-                    for (Object s : expression.previousStatements)
-                        stringBuilder.add(s);
+                    result.addAll(expression.previousStatements);
                     var retType = typeToOllir(semanticsResult.getSymbolTable().getReturnType(methodName));
-                    stringBuilder.add("ret"+retType+" "+expression.result+";\n");
+                    result.add(new Stringable("ret"+retType+" "+expression.result+";\n"));
                     for(VarState openVar : expression.freeVars)
                         releaseTemporaryVariable(openVar);
                     break;
                 }
             }
         }
-        StatementVisitResult ret = new StatementVisitResult();
-        ret.result = stringBuilder;
-        ret.previousStatements = previousStatements;
-        ret.branchingConstants = branchingConstants;
+        StringableStatementResult ret = new StringableStatementResult(result);
         return ret;
     }
     String methodVisitor(JmmNode methodNode, JmmSemanticsResult semanticsResult){
@@ -780,16 +783,16 @@ public class MyJmmOptimization implements JmmOptimization {
             var aVar= semanticsResult.getSymbolTable().getParameters(methodName).get(i);
             localVarsState.put(aVar.getName(), new VarState(true, aVar.getType(), "$"+(i+1)+"."+aVar.getName(),false, false, false));
         }
-        StatementVisitResult stmtVisit = statementsVisitor(methodNode.getChildren(),semanticsResult,localVarsState,methodName);
-        ArrayList<Object> stringBuilder = stmtVisit.result;
-        if(stringBuilder.size()>0 && stringBuilder.get(stringBuilder.size()-1).toString().endsWith(":\n")){
-            stringBuilder.add("ret.V;\n");
+        StringableStatementResult stmtVisit = statementsVisitor(methodNode.getChildren(),semanticsResult,localVarsState,methodName);
+
+        List<Stringable> result = stmtVisit.getResultStatements();
+        if(result.size()>0 && result.get(result.size()-1).toString().endsWith(":\n")){
+            result.add(new Stringable("ret.V;\n"));
         }
         StringBuilder ret=new StringBuilder();
-        for(Object o : stringBuilder) {
-            String s = o.toString();
-            if(!s.equals("[]"))
-                ret.append(s);
+        for(Stringable o : result) {
+            //if(!s.equals("[]"))
+            ret.append(o.toString());
         }
         return ret.toString();
     }
@@ -864,25 +867,9 @@ public class MyJmmOptimization implements JmmOptimization {
             e.setValue(new VarState(isInitalized,oVar.type,oVar.name,oVar.isOpen,isConstant,oVar.isTemporary,value));
         }
     }
-    private class ExpressionVisitResult{
-        //Quartet<String,ArrayList<String>,ArrayList<VarState>,Boolean>
-        String result;
-        ArrayList<String> previousStatements;
-        ArrayList<VarState> freeVars;
-        Boolean isConstant;
-        Type type;
-        ExpressionVisitResult(String p1, ArrayList<String> p2, ArrayList<VarState> p3, Boolean p4, Type p5){
-            result = p1;
-            previousStatements = p2;
-            freeVars = p3;
-            isConstant = p4;
-            type = p5;
-        }
-    }
     private class StatementVisitResult{
         public ArrayList<Object> result = null;
         public ArrayList<String> previousStatements = null;
-        public ArrayList<String> branchingConstants = null;
     }
     static class VarState {
         public boolean isInitialized; //is initialized
@@ -1046,12 +1033,35 @@ public class MyJmmOptimization implements JmmOptimization {
         }
 
     }
-    abstract class IStringable{
+    public class Stringable {
+        public String string;
+        public LinkedList<Stringable> getPreviousStatements(){
+            return null;
+        }
 
+        @Override
+        public String toString() {
+            return string;
+        }
+        public Stringable(String string){
+            this.string = string;
+        }
+        Stringable(){}
+        public boolean compact(){
+            boolean compacted = true;
+            for(Stringable s : getPreviousStatements()){
+                boolean compS = s.compact();
+                if(compacted && !compS)
+                    compacted = false;
+                if(compS)
+                    getPreviousStatements().addAll(s.getPreviousStatements());
+            }
+            return compacted;
+        }
     }
-    public class StringableResult {
+    public class StringableResult extends Stringable {
         String result = null;
-        LinkedList<Object> previousStatements = new LinkedList<>();
+        LinkedList<Stringable> previousStatements = new LinkedList<>();
         ArrayList<VarState> freeVars = new ArrayList<>();
         Function<StringableResult,String> f = null;
         public VarState watchingVar = null;
@@ -1077,21 +1087,26 @@ public class MyJmmOptimization implements JmmOptimization {
             this.watchingExpr = watch;
             this.localVarsState = localVarsState;
         }
-        public StringableResult(Function<StringableResult,String> func, LinkedList<Object> p2, ArrayList<VarState> p3, Boolean p4, Type p5){
+        public StringableResult(Function<StringableResult,String> func, LinkedList<Stringable> p2, ArrayList<VarState> p3, Boolean p4, Type p5){
             this.f = func;
             this.previousStatements = p2;
             this.isConstant = p4;
             this.freeVars = p3;
             this.type = p5;
         }
-        public StringableResult(String p1, LinkedList<Object> p2, ArrayList<VarState> p3, Boolean p4, Type p5){
+        public StringableResult(String p1, LinkedList<Stringable> p2, ArrayList<VarState> p3, Boolean p4, Type p5){
             this.result = p1;
             this.previousStatements=p2;
             this.isConstant = p4;
             this.freeVars = p3;
             this.type = p5;
         }
-        public void addPreviousStatement(Object o){
+
+        StringableResult() {
+        }
+
+
+        public void addPreviousStatement(Stringable o){
             previousStatements.add(o);
         }
         @Override
@@ -1100,7 +1115,7 @@ public class MyJmmOptimization implements JmmOptimization {
                 return "";
             return result;
         }
-        public LinkedList<Object> getPreviousStatements(){
+        public LinkedList<Stringable> getPreviousStatements(){
             return previousStatements;
         }
         public void addFreeableVar(VarState freeable){
@@ -1120,6 +1135,20 @@ public class MyJmmOptimization implements JmmOptimization {
             for(StringableResult sr : dependants){
                 sr.resolve();
             }
+        }
+    }
+    public class StringableStatementResult extends StringableResult{
+        LinkedList<Stringable> resultStatements = new LinkedList<>();
+        public StringableStatementResult(String s, boolean constant, Type t) {
+            super(s, constant, t);
+        }
+        public StringableStatementResult(LinkedList<Stringable> resultStatements){
+            super();
+            this.resultStatements = resultStatements;
+        }
+
+        public LinkedList<Stringable> getResultStatements() {
+            return resultStatements;
         }
     }
 }
