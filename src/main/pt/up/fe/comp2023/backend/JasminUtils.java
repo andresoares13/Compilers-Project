@@ -11,32 +11,22 @@ public class JasminUtils {
     public static String translateType(ClassUnit ollirClass, Type type) {
         ElementType elementType = type.getTypeOfElement();
 
-        switch (elementType) {
-            case ARRAYREF:
-                return "[" + translateType(((ArrayType) type).getArrayType());
-            case OBJECTREF:
-            case CLASS:
-                return "L" + getFullClassName(ollirClass, ((ClassType) type).getName()) + ";";
-            default:
-                return translateType(elementType);
-        }
+        return switch (elementType) {
+            case ARRAYREF -> "[" + translateType(((ArrayType) type).getArrayType());
+            case OBJECTREF, CLASS -> "L" + getFullClassName(ollirClass, ((ClassType) type).getName()) + ";";
+            default -> translateType(elementType);
+        };
     }
 
     public static String translateType(ElementType type){
-        switch (type){
-            case INT32:
-                return "I";
-            case BOOLEAN:
-                return "Z";
-            case STRING:
-                return "Ljava/lang/String;";
-            case THIS:
-                return "this";
-            case VOID:
-                return "V";
-            default:
-                return "";
-        }
+        return switch (type) {
+            case INT32 -> "I";
+            case BOOLEAN -> "Z";
+            case STRING -> "Ljava/lang/String;";
+            case THIS -> "this";
+            case VOID -> "V";
+            default -> "";
+        };
     }
 
     public static String getFullClassName(ClassUnit ollirClass, String className) {

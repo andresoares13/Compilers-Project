@@ -8,7 +8,6 @@ import java.util.List;
 public class InstructionTranslator {
     private int stackCounter = 0;
     private int max_stackCounter = 0;
-    private final int indentation = 1;
     private int labelCounter = 1;
 
     public String translateInstruction(Instruction instruction, Method method) {
@@ -22,7 +21,7 @@ public class InstructionTranslator {
 
         switch (instType) {
             case CALL -> stringBuilder.append(translateInstruction((CallInstruction) instruction, method));
-            case GOTO -> stringBuilder.append(translateInstruction((GotoInstruction) instruction, method));
+            case GOTO -> stringBuilder.append(translateInstruction((GotoInstruction) instruction));
             case NOPER -> stringBuilder.append(translateInstruction((SingleOpInstruction) instruction, method));
             case ASSIGN -> stringBuilder.append(translateInstruction((AssignInstruction) instruction, method));
             case BRANCH -> stringBuilder.append(translateInstruction((CondBranchInstruction) instruction, method));
@@ -154,7 +153,7 @@ public class InstructionTranslator {
     }
 
     // GOTO
-    public String translateInstruction(GotoInstruction instruction, Method method) {
+    public String translateInstruction(GotoInstruction instruction) {
         return getIndentation() + "goto " + instruction.getLabel();
     }
 
@@ -501,6 +500,7 @@ public class InstructionTranslator {
     }
 
     private String getIndentation() {
+        int indentation = 1;
         return "\t".repeat(indentation);
     }
 
