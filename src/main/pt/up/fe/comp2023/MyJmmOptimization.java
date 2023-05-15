@@ -36,6 +36,9 @@ public class MyJmmOptimization implements JmmOptimization {
             if (optimize != null) {
                 oFlagValue = Boolean.parseBoolean(optimize);
             }
+            if (jmmSemanticsResult.getConfig().get("registerAllocation") != null){
+                oFlagValue = true;
+            }
         }
         SymbolTable st = jmmSemanticsResult.getSymbolTable();
         for(String s:st.getImports()) {
