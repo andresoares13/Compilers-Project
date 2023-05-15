@@ -20,7 +20,7 @@ public class MyRegisterAllocation {
         System.out.println(ollirResult.getConfig());
         OllirResult optimized = ollirResult;
         if (ollirResult.getConfig().get("registerAllocation") != null){
-            int numRegs = parseInt(ollirResult.getConfig().get("registerAllocation"));;
+            int numRegs = parseInt(ollirResult.getConfig().get("registerAllocation"));
             optimized= allocate(ollirResult, numRegs);
         }
 

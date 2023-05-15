@@ -26,7 +26,7 @@ public class Launcher {
 
         // Parse arguments as a map with predefined options
         var config = parseArgs(args);
-        config.put("registerAllocation", "3");
+        config.put("registerAllocation", "0");
         config.put("optimize", "true");
         // Get input file
         File inputFile = new File(config.get("inputFile"));
@@ -69,7 +69,7 @@ public class Launcher {
         //table.printVars();
 
         JasminResult jasminResult = new JmmBackend().toJasmin(ollir2);
-        System.out.println(jasminResult.getJasminCode());
+        //System.out.println(jasminResult.getJasminCode());
         //System.out.println(jasminResult.runWithFullOutput().getOutput());
         //var result = TestUtils.backend(ollir);
     }
