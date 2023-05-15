@@ -58,12 +58,12 @@ expression
     : expression '.' name=ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
     | expression '[' expression ']' #IndexOp
     | expression '.' 'length' #LengthOp
-    | 'new' 'int' '[' expression ']' #NewArr
     | 'new' name=ID '(' ')' #NewFunc
     | expression op=('*' | '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
     | expression op='<' expression #BinaryOp
     | expression op='&&' expression #BinaryOp
+    | 'new' 'int' '[' expression ']' #NewArr
     | '!' expression #NegationOp
     | '(' expression ')' #ParOp
     | value=INTEGER #Integer
