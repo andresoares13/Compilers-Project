@@ -57,14 +57,14 @@ statement
 expression
     : expression '.' name=ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
     | expression '[' expression ']' #IndexOp
+    | '!' expression #NegationOp
     | expression '.' 'length' #LengthOp
-    | 'new' 'int' '[' expression ']' #NewArr
     | 'new' name=ID '(' ')' #NewFunc
     | expression op=('*' | '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
     | expression op='<' expression #BinaryOp
     | expression op='&&' expression #BinaryOp
-    | '!' expression #NegationOp
+    | 'new' 'int' '[' expression ']' #NewArr
     | '(' expression ')' #ParOp
     | value=INTEGER #Integer
     | value=('true' | 'false') #Bool
