@@ -56,16 +56,16 @@ statement
 
 expression
     : expression '.' name=ID '(' ( expression ( ',' expression )* )? ')' #FuncOp
+    | '(' expression ')' #ParOp
     | expression '[' expression ']' #IndexOp
-    | expression '.' 'length' #LengthOp
     | 'new' name=ID '(' ')' #NewFunc
     | expression op=('*' | '/') expression #BinaryOp
     | expression op=('+' | '-') expression #BinaryOp
     | expression op='<' expression #BinaryOp
     | expression op='&&' expression #BinaryOp
+    | expression '.' 'length' #LengthOp
     | 'new' 'int' '[' expression ']' #NewArr
     | '!' expression #NegationOp
-    | '(' expression ')' #ParOp
     | value=INTEGER #Integer
     | value=('true' | 'false') #Bool
     | value=ID #Identifier
