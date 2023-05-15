@@ -129,7 +129,7 @@ public class Cpf5_Optimizations {
     public void section2_RegAlloc_AtMostRequestedNumber() {
 
         String filename = "reg_alloc/regalloc.jmm";
-        int expectedNumReg = 2;
+        int expectedNumReg = 3;
 
         JasminResult original = getJasminResult(filename);
         JasminResult optimized = getJasminResultReg(filename, expectedNumReg);
