@@ -29,7 +29,7 @@ public class MyGraphColoring {
 
         reportsList = reports;
         liveArray = liveRanges;
-        minReg = 0;
+        minReg = m.isStaticMethod() ? 0 : 1;
         varTable = m.getVarTable();
         stack = new Stack<>();
 
