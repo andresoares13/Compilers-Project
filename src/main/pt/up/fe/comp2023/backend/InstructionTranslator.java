@@ -307,7 +307,7 @@ public class InstructionTranslator {
         Element leftElement = instruction.getLeftOperand();
         Element rightElement = instruction.getRightOperand();
 
-        if(operationType != OperationType.ADD && operationType != OperationType.LTH) {
+        if(operationType != OperationType.ADD && operationType != OperationType.LTH && operationType != OperationType.GTE) {
             jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
             jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
             jasminInstruction.append(getIndentation());
@@ -346,6 +346,23 @@ public class InstructionTranslator {
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
                 jasminInstruction.append(getIndentation());
                 jasminInstruction.append(get_if("if_icmplt "));
+            }
+            case GTE -> {
+                if(rightElement.isLiteral()){
+                    LiteralElement literalElement = (LiteralElement) rightElement;
+
+                    int literal = Integer.parseInt(JasminUtils.trimLiteral(literalElement.getLiteral()));
+                    if(literal == 0) {
+                        jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                        jasminInstruction.append(getIndentation());
+                        jasminInstruction.append(get_if("ifge "));
+                        break;
+                    }
+                }
+                jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+                jasminInstruction.append(getIndentation());
+                jasminInstruction.append(get_if("if_icmpge "));
             }
             default -> {
             }
