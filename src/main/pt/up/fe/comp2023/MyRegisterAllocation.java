@@ -13,6 +13,9 @@ public class MyRegisterAllocation {
             int numRegs = parseInt(ollirResult.getConfig().get("registerAllocation"));
             //optimized= allocate(ollirResult, numRegs);
             DataFlowAnalysis dataFlowAnalysis = new DataFlowAnalysis(ollirResult);
+            do {
+                dataFlowAnalysis.calcInOut();
+            } while (dataFlowAnalysis.eliminateDeadVars());
             dataFlowAnalysis.calcInOut();
             dataFlowAnalysis.colorGraph();
             dataFlowAnalysis.allocateRegisters();
