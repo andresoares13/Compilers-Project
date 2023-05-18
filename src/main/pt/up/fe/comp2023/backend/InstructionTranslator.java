@@ -372,7 +372,8 @@ public class InstructionTranslator {
 
     private String iinc(LiteralElement literalElement, Operand operand, Method method) {
         if(literalElement.getLiteral().equals("0"))
-            return "";
+            return getCorrespondingLoad(operand, method);
+
         StringBuilder jasminInstruction = new StringBuilder();
         Descriptor descriptor = method.getVarTable().get(operand.getName());
 
