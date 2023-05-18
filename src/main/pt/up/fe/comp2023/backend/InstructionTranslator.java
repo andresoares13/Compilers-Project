@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InstructionTranslator {
-    private int stackCounter = 0;
-    private int max_stackCounter = 0;
+    private int stackCounter = 1;
+    private int max_stackCounter = 1;
     private int labelCounter = 1;
 
     public String translateInstruction(Instruction instruction, Method method) {
@@ -440,6 +440,7 @@ public class InstructionTranslator {
                     return getIndentation() + "iload" + spacer + operandDescriptor.getVirtualReg();
                 }
                 case ARRAYREF -> {
+                    manageStack(1);
                     StringBuilder jasminInstruction = new StringBuilder();
                     jasminInstruction.append(getIndentation()).append("aload").append(spacer).append(operandDescriptor.getVirtualReg());
                     if (element instanceof ArrayOperand) {
