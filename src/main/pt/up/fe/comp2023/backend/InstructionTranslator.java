@@ -307,26 +307,30 @@ public class InstructionTranslator {
         Element leftElement = instruction.getLeftOperand();
         Element rightElement = instruction.getRightOperand();
 
-        if(operationType != OperationType.ADD && operationType != OperationType.LTH && operationType != OperationType.GTE) {
+        if(operationType != OperationType.ADD && operationType != OperationType.SUB &&
+                operationType != OperationType.LTH && operationType != OperationType.GTE) {
             jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
             jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
             jasminInstruction.append(getIndentation());
         }
 
         switch (operationType) {
-            case ADD -> {
+            case ADD, SUB -> {
                 if (leftElement.isLiteral() && !rightElement.isLiteral())
-                    return iinc((LiteralElement) leftElement, (Operand) rightElement, method);
+                    return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
                 if (!leftElement.isLiteral() && rightElement.isLiteral())
-                    return iinc((LiteralElement) rightElement, (Operand) leftElement, method);
+                    return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
 
                 jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
                 jasminInstruction.append(getIndentation());
-                jasminInstruction.append("iadd");
+
+                if(operationType == OperationType.ADD)
+                    jasminInstruction.append("iadd");
+                else
+                    jasminInstruction.append("isub");
 
             }
-            case SUB -> jasminInstruction.append("isub");
             case MUL -> jasminInstruction.append("imul");
             case DIV -> jasminInstruction.append("idiv");
             case AND, ANDB -> jasminInstruction.append("iand");
@@ -370,7 +374,7 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    private String iinc(LiteralElement literalElement, Operand operand, Method method) {
+    private String iinc(LiteralElement literalElement, Operand operand, Method method, OperationType opType) {
         if(literalElement.getLiteral().equals("0"))
             return getCorrespondingLoad(operand, method);
 
@@ -378,7 +382,13 @@ public class InstructionTranslator {
         Descriptor descriptor = method.getVarTable().get(operand.getName());
 
         jasminInstruction.append("iinc ").append(descriptor.getVirtualReg());
-        jasminInstruction.append(" ").append(JasminUtils.trimLiteral(literalElement.getLiteral()));
+        jasminInstruction.append(" ");
+
+        if(opType == OperationType.SUB)
+            jasminInstruction.append("-");
+
+        jasminInstruction.append(JasminUtils.trimLiteral(literalElement.getLiteral()));
+
         return getIndentation() + jasminInstruction + "\n" + getCorrespondingLoad(operand, method);
     }
 
