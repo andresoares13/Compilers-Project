@@ -30,18 +30,12 @@ public class DataFlowAnalysis {
         }
     }
 
-    public void buildInterferenceGraph() {
-        for (DataFlowAnalysisAux methodFlow: methodFlowList) {
-            methodFlow.buildInterferenceGraph();
-        }
-    }
-
     public void colorGraph() {
         for (DataFlowAnalysisAux methodFlow: methodFlowList) {
             methodFlow.buildInterferenceGraph();
-            var num = ollirResult.getConfig().get("registerAllocation");
+            String registers = ollirResult.getConfig().get("registerAllocation");
 
-            methodFlow.colorInterferenceGraph(Integer.parseInt(num));
+            methodFlow.colorInterferenceGraph(Integer.parseInt(registers));
         }
     }
 
