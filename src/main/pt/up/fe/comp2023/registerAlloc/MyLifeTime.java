@@ -55,32 +55,7 @@ public class MyLifeTime {
         }
     }
 
-    public void DeadVarsDealer(){
-        boolean hasDeadVars = false;
-        do {
-            ollirResult.getOllirClass().buildCFGs();
-            Method method = null;
-            List<Set<String>> def = new ArrayList<>();
-            List<Set<String>> use = new ArrayList<>();
-            List<Set<String>> in = new ArrayList<>();
-            List<Set<String>> out = new ArrayList<>();
-            List<Node> nodeOrder = new ArrayList<>();
-            for (int i=0; i< ollirResult.getOllirClass().getMethods().size(); i++) {
-                method = ollirResult.getOllirClass().getMethods().get(i);
-                def = new ArrayList<>();
-                use = new ArrayList<>();
-                in = new ArrayList<>();
-                out = new ArrayList<>();
-                nodeOrder = new ArrayList<>();
-                orderNodes(nodeOrder, method);
-                InOutGeneratorAux(def, use, in, out, nodeOrder);
-            }
-            for (int i=0;i<ollirResult.getOllirClass().getMethods().size();i++){
-                hasDeadVars = eliminateDeadVars(method,nodeOrder,def,out) || hasDeadVars;
-            }
-        }
-        while(hasDeadVars);
-    }
+
 
     public void InOutGeneratorAux(List<Set<String>> def, List<Set<String>> use, List<Set<String>> in, List<Set<String>> out, List<Node> nodeOrder) {
         in = new ArrayList<>();
@@ -103,8 +78,7 @@ public class MyLifeTime {
             for (int index = 0; index < nodeOrder.size(); index++) {
                 Node node = nodeOrder.get(index);
 
-                // out[n] = (union (for all s that belongs to succ[n])) in[s]
-                // in[n] = use[n] union (out[n] - def[n])
+
 
                 Set<String> origIn = new HashSet<>(in.get(index));
                 Set<String> origOut = new HashSet<>(out.get(index));
@@ -256,57 +230,6 @@ public class MyLifeTime {
         temp.add(params);
         return temp;
     }
-
-
-
-    public boolean eliminateDeadVars(Method method, List<Node> nodeOrder, List<Set<String>> def,List<Set<String>> out) {
-        boolean hasDeadVars = false;
-        ArrayList<Instruction> instructions = method.getInstructions();
-        ArrayList<Instruction> copyInstructions = new ArrayList<>(instructions);
-        for (Instruction instruction: copyInstructions) {
-            int index = nodeOrder.indexOf(instruction);
-
-            if (instruction instanceof AssignInstruction assignInstruction) {
-                String name = null;
-                if (assignInstruction.getDest() instanceof Operand operand){
-                    name = operand.getName();
-                }
-
-
-                if (name != null && def.get(index).contains(name) && !out.get(index).contains(name)) {
-                    List<Node> predecessors = instruction.getPredecessors();
-                    List<Node> successors = instruction.getSuccessors();
-
-                    for (Node predecessor: predecessors) {
-                        for (Node successor: successors) {
-                            predecessor.addSucc(successor);
-                            successor.addPred(predecessor);
-                        }
-                    }
-                    List<String> labels = method.getLabels(instruction);
-
-                    for (String label: labels) {
-                        method.getLabels().remove(label);
-                        for (Node successor: successors) {
-                            method.addLabel(label, (Instruction) successor);
-                        }
-                    }
-
-                    instructions.remove(instruction);
-                    hasDeadVars = true;
-                }
-            }
-        }
-        if (hasDeadVars) method.buildVarTable();
-
-        return hasDeadVars;
-    }
-
-
-
-
-
-
 
 
 

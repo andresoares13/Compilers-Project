@@ -11,19 +11,21 @@ public class MyRegisterAllocation {
         OllirResult optimized = ollirResult;
         if (ollirResult.getConfig().get("registerAllocation") != null) {
 
+            /*
             DataFlowAnalysis dataFlowAnalysis = new DataFlowAnalysis(ollirResult);
-            
+
             dataFlowAnalysis.calcInOut();
             dataFlowAnalysis.colorGraph();
             dataFlowAnalysis.allocateRegisters();
 
+             */
 
 
-            /*
+
+
             MyLifeTime lifeTime = new MyLifeTime(ollirResult);
-            lifeTime.DeadVarsDealer();
             lifeTime.allocate();
-            */
+
         }
 
 
