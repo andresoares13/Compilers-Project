@@ -315,9 +315,7 @@ public class InstructionTranslator {
         }
 
         switch (operationType) {
-            case ADD -> {
-                if (leftElement.isLiteral() && !rightElement.isLiteral())
-                    return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
+            case ADD, SUB -> {
                 if (!leftElement.isLiteral() && rightElement.isLiteral())
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
 
@@ -325,17 +323,10 @@ public class InstructionTranslator {
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
                 jasminInstruction.append(getIndentation());
 
-                jasminInstruction.append("iadd");
-            }
-            case SUB -> {
-                if (!leftElement.isLiteral() && rightElement.isLiteral())
-                    return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
-
-                jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
-                jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
-                jasminInstruction.append(getIndentation());
-
-                jasminInstruction.append("isub");
+                if(operationType == OperationType.ADD)
+                    jasminInstruction.append("iadd");
+                else
+                    jasminInstruction.append("isub");
             }
             case MUL -> jasminInstruction.append("imul");
             case DIV -> jasminInstruction.append("idiv");
@@ -411,7 +402,7 @@ public class InstructionTranslator {
         if_body.append(getIndentation()).append("goto ").append(l2).append("\n");
         if_body.append(getIndentation()).append(l1).append(":\n");
         if_body.append(getIndentation()).append("iconst_1\n");
-        if_body.append(getIndentation()).append(l2).append(":\n");
+        if_body.append(getIndentation()).append(l2).append(":");
         return if_body.toString();
     }
 
