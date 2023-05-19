@@ -22,9 +22,9 @@ public class MyRegisterAllocation {
              */
 
 
-            MyLifeTime lifeTime = new MyLifeTime();
-            lifeTime.DeadVarsDealer(ollirResult);
-            lifeTime.allocate(ollirResult);
+            MyLifeTime lifeTime = new MyLifeTime(ollirResult);
+            lifeTime.DeadVarsDealer();
+            lifeTime.allocate();
 
         }
 

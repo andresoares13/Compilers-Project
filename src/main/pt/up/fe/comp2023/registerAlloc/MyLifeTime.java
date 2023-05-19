@@ -9,7 +9,13 @@ import java.util.*;
 
 public class MyLifeTime {
 
-    public void allocate(OllirResult ollirResult) {
+    private OllirResult ollirResult;
+
+    public MyLifeTime(OllirResult ollirResult){
+        this.ollirResult = ollirResult;
+    }
+
+    public void allocate() {
         ollirResult.getOllirClass().buildCFGs();
 
         Integer registers = Integer.parseInt(ollirResult.getConfig().get("registerAllocation"));
@@ -49,7 +55,7 @@ public class MyLifeTime {
         }
     }
 
-    public void DeadVarsDealer(OllirResult ollirResult){
+    public void DeadVarsDealer(){
         boolean hasDeadVars = false;
         do {
             ollirResult.getOllirClass().buildCFGs();
