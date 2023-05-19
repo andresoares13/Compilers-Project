@@ -12,8 +12,8 @@ import static pt.up.fe.comp.jmm.report.Stage.OPTIMIZATION;
 
 public class MyGraph {
 
-    public List<MyNode> localVars = new ArrayList<>();
-    public List<MyNode> params = new ArrayList<>();
+    public Set<MyNode> localVars = new HashSet<>();
+    public Set<MyNode> params = new HashSet<>();
 
     public MyGraph(List<String> nodes, List<String> params) {
         for (int i=0;i<nodes.size();i++){
