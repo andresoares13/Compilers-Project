@@ -58,10 +58,6 @@ public class MyLifeTime {
 
 
     public void InOutGeneratorAux(List<Set<String>> def, List<Set<String>> use, List<Set<String>> in, List<Set<String>> out, List<Node> nodeOrder) {
-        in = new ArrayList<>();
-        out = new ArrayList<>();
-        def = new ArrayList<>();
-        use = new ArrayList<>();
         for (Node node: nodeOrder) {
             in.add(new HashSet<>());
             out.add(new HashSet<>());
