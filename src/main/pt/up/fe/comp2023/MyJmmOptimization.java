@@ -752,7 +752,7 @@ public class MyJmmOptimization implements JmmOptimization {
                         result.add(new Stringable("whilebody_"+whileLabel+":\n"));
                         result.addAll(statementsVisit.getResultStatements());
                         result.add(new Stringable("whilestart_"+whileLabel+":\n"));
-                        result.addAll(statementsVisit.previousStatements);
+                        result.addAll(whileConditionExpression.previousStatements);
                         result.add(new Stringable("if("+whileConditionExpression.result+") goto whilebody_"+whileLabel+";\n"));
                         for (VarState openVar : whileConditionExpression.freeVars)
                             releaseTemporaryVariable(openVar);
