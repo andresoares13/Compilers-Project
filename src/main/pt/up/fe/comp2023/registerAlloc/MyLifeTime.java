@@ -59,15 +59,23 @@ public class MyLifeTime {
         boolean hasDeadVars = false;
         do {
             ollirResult.getOllirClass().buildCFGs();
+            Method method = null;
+            List<Set<String>> def = new ArrayList<>();
+            List<Set<String>> use = new ArrayList<>();
+            List<Set<String>> in = new ArrayList<>();
+            List<Set<String>> out = new ArrayList<>();
+            List<Node> nodeOrder = new ArrayList<>();
             for (int i=0; i< ollirResult.getOllirClass().getMethods().size(); i++) {
-                Method method = ollirResult.getOllirClass().getMethods().get(i);
-                List<Set<String>> def = new ArrayList<>();
-                List<Set<String>> use = new ArrayList<>();
-                List<Set<String>> in = new ArrayList<>();
-                List<Set<String>> out = new ArrayList<>();
-                List<Node> nodeOrder = new ArrayList<>();
+                method = ollirResult.getOllirClass().getMethods().get(i);
+                def = new ArrayList<>();
+                use = new ArrayList<>();
+                in = new ArrayList<>();
+                out = new ArrayList<>();
+                nodeOrder = new ArrayList<>();
                 orderNodes(nodeOrder, method);
                 InOutGeneratorAux(def, use, in, out, nodeOrder);
+            }
+            for (int i=0;i<ollirResult.getOllirClass().getMethods().size();i++){
                 hasDeadVars = eliminateDeadVars(method,nodeOrder,def,out) || hasDeadVars;
             }
         }
