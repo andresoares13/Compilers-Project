@@ -315,7 +315,9 @@ public class InstructionTranslator {
         }
 
         switch (operationType) {
-            case ADD, SUB -> {
+            case ADD -> {
+                if (leftElement.isLiteral() && !rightElement.isLiteral())
+                    return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
                 if (!leftElement.isLiteral() && rightElement.isLiteral())
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
 
@@ -323,10 +325,17 @@ public class InstructionTranslator {
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
                 jasminInstruction.append(getIndentation());
 
-                if(operationType == OperationType.ADD)
-                    jasminInstruction.append("iadd");
-                else
-                    jasminInstruction.append("isub");
+                jasminInstruction.append("iadd");
+            }
+            case SUB -> {
+                if (!leftElement.isLiteral() && rightElement.isLiteral())
+                    return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
+
+                jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
+                jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
+                jasminInstruction.append(getIndentation());
+
+                jasminInstruction.append("isub");
             }
             case MUL -> jasminInstruction.append("imul");
             case DIV -> jasminInstruction.append("idiv");
