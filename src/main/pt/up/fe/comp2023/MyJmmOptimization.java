@@ -542,7 +542,7 @@ public class MyJmmOptimization implements JmmOptimization {
                 result = "this" + typeToOllir(resultType);
                 break;
             case "Bool":
-                result = node.get("value")+".bool";
+                result = (node.get("value").equals("true")?"1":"0") +".bool";
                 resultType = new Type("boolean" , false);
                 isConstant = true;
                 break;
