@@ -87,10 +87,11 @@ public class MyGraph {
                 if (node.isAllFree(reg)) {
                     node.updateReg(reg);
                     node.toggleVisible();
-                    break;
+                    throw new RuntimeException("Not enough registers." +
+                            " At least " + regs + " registers are needed but " + maxK + " were requested.");
                 }
             }
-            /*
+
             if (!node.isVisible) {
                 ollirResult.getReports().add(
                         new Report(
@@ -103,7 +104,7 @@ public class MyGraph {
                 throw new RuntimeException("Unexpected error. Register allocation failed.");
             }
 
-             */
+
         }
 
         int reg = 1;
