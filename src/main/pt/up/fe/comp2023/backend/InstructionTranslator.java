@@ -384,6 +384,7 @@ public class InstructionTranslator {
         if(literalElement.getLiteral().equals("0"))
             return getCorrespondingLoad(operand, method);
 
+        manageStack(1);
         StringBuilder jasminInstruction = new StringBuilder();
         Descriptor descriptor = method.getVarTable().get(operand.getName());
 
