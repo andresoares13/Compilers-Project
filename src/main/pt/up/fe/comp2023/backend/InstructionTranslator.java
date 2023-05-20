@@ -329,7 +329,6 @@ public class InstructionTranslator {
             }
             case SUB -> {
                 if (!leftElement.isLiteral() && rightElement.isLiteral()) {
-                    manageStack(1);
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
                 }
 
@@ -407,6 +406,7 @@ public class InstructionTranslator {
         String l2 = "label" + (labelCounter + 1);
 
         labelCounter += 2;
+        manageStack(-1);
 
         if_body.append(if_instruction).append(l1).append("\n");
         if_body.append(getIndentation()).append("iconst_0\n");
