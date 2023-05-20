@@ -72,6 +72,7 @@ public class InstructionTranslator {
                 jasminInstruction.append(getIndentation());
 
                 if(callType == CallType.invokestatic){
+                    //manageStack(-1);
                     jasminInstruction.append("invokestatic ").append(caller.getName());
                 } else if(callType == CallType.invokevirtual) {
                     jasminInstruction.append("invokevirtual ");
@@ -101,10 +102,12 @@ public class InstructionTranslator {
                 if(callType == CallType.invokevirtual){
                     System.out.println(assign);
                     if(instruction.getReturnType().getTypeOfElement() != ElementType.VOID && !assign) {
+                        //manageStack(-1);
                         jasminInstruction.append("\n").append(getIndentation()).append("pop");
                     }
                 } else if(callType == CallType.invokespecial) {
                     if(!method.isConstructMethod() && pop) {
+                        //manageStack(-1);
                         jasminInstruction.append("\n").append(getIndentation()).append("pop");
                     }
                 }
@@ -406,7 +409,7 @@ public class InstructionTranslator {
         String l2 = "label" + (labelCounter + 1);
 
         labelCounter += 2;
-        manageStack(-1);
+        //manageStack(-1);
 
         if_body.append(if_instruction).append(l1).append("\n");
         if_body.append(getIndentation()).append("iconst_0\n");
@@ -478,6 +481,7 @@ public class InstructionTranslator {
                     return jasminInstruction.toString();
                 }
                 case CLASS, OBJECTREF, THIS, STRING -> {
+                    manageStack(1);
                     return getIndentation() + "aload" + spacer + operandDescriptor.getVirtualReg();
                 }
                 default -> {
@@ -488,7 +492,7 @@ public class InstructionTranslator {
     }
 
     private String getCorrespondingStore(Element element, Method method) {
-        manageStack(-1);
+        //manageStack(-1);
         if (element.isLiteral()) {
             return "";
         } else {
