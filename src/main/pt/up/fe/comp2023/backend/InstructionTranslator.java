@@ -331,10 +331,10 @@ public class InstructionTranslator {
                 jasminInstruction.append("iadd");
             }
             case SUB -> {
-                if (!leftElement.isLiteral() && rightElement.isLiteral()) {
+                /*if (!leftElement.isLiteral() && rightElement.isLiteral()) {
                     manageStack(1);
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
-                }
+                }*/
 
                 jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
