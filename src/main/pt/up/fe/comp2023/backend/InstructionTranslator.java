@@ -316,8 +316,8 @@ public class InstructionTranslator {
 
         switch (operationType) {
             case ADD -> {
-                //if (leftElement.isLiteral() && !rightElement.isLiteral())
-                //    return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
+                if (leftElement.isLiteral() && !rightElement.isLiteral())
+                    return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
                 if (!leftElement.isLiteral() && rightElement.isLiteral())
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
 
