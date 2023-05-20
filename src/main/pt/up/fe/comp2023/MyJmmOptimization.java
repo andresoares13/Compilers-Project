@@ -247,10 +247,12 @@ public class MyJmmOptimization implements JmmOptimization {
                     }
                     break;
                 }
-                if(exp1.isConstant && op.equals("+"))
+                result = exp1.result + " " + op + typeToOllir(resultType) + " " + exp2.result;
+                /*if(exp1.isConstant && op.equals("+"))
                     result = exp2.result + " " + op + typeToOllir(resultType) + " " + exp1.result;
                 else
                     result = exp1.result + " " + op + typeToOllir(resultType) + " " + exp2.result;
+                 */
                 if(oFlagValue){
                     switch (op){
                         case "&&":
