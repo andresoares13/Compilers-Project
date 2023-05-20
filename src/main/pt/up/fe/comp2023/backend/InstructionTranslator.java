@@ -328,8 +328,10 @@ public class InstructionTranslator {
                 jasminInstruction.append("iadd");
             }
             case SUB -> {
-                if (!leftElement.isLiteral() && rightElement.isLiteral())
+                if (!leftElement.isLiteral() && rightElement.isLiteral()) {
+                    manageStack(1g);
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
+                }
 
                 jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
@@ -384,7 +386,6 @@ public class InstructionTranslator {
         if(literalElement.getLiteral().equals("0"))
             return getCorrespondingLoad(operand, method);
 
-        manageStack(1);
         StringBuilder jasminInstruction = new StringBuilder();
         Descriptor descriptor = method.getVarTable().get(operand.getName());
 
