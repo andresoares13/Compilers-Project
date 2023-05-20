@@ -332,6 +332,7 @@ public class InstructionTranslator {
             }
             case SUB -> {
                 if (!leftElement.isLiteral() && rightElement.isLiteral()) {
+                    manageStack(1);
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
                 }
 
