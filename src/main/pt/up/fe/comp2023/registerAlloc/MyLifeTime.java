@@ -48,11 +48,11 @@ public class MyLifeTime {
     public void allocateRegisters() {
         for (MyLifeTimeCalculator methodFlow: methodFlowList) {
             HashMap<String, Descriptor> varTable = methodFlow.getMethod().getVarTable();
-            for (RegisterNode node: methodFlow.getInterferenceGraph().getLocalVars()) {
-                varTable.get(node.getName()).setVirtualReg(node.getRegister());
+            for (MyNode node: methodFlow.getInterferenceGraph().localVars) {
+                varTable.get(node.name).setVirtualReg(node.getReg());
             }
-            for (RegisterNode node: methodFlow.getInterferenceGraph().getParams()) {
-                varTable.get(node.getName()).setVirtualReg(node.getRegister());
+            for (MyNode node: methodFlow.getInterferenceGraph().params) {
+                varTable.get(node.name).setVirtualReg(node.getReg());
             }
 
             if (varTable.get("this") != null) {

@@ -18,7 +18,7 @@ public class MyLifeTimeCalculator {
     private ArrayList<Set<String>> out;
     private ArrayList<Node> nodeOrder;
 
-    private InterferenceGraph interferenceGraph;
+    private MyGraph interferenceGraph;
 
     public MyLifeTimeCalculator(Method method, OllirResult ollirResult) {
         this.method = method;
@@ -72,9 +72,6 @@ public class MyLifeTimeCalculator {
 
             for (int index = 0; index < nodeOrder.size(); index++) {
                 Node node = nodeOrder.get(index);
-
-                // out[n] = (union (for all s that belongs to succ[n])) in[s]
-                // in[n] = use[n] union (out[n] - def[n])
 
                 Set<String> origIn = new HashSet<>(in.get(index));
                 Set<String> origOut = new HashSet<>(out.get(index));
@@ -208,17 +205,17 @@ public class MyLifeTimeCalculator {
             }
         }
 
-        interferenceGraph = new InterferenceGraph(variables, params);
+        interferenceGraph = new MyGraph(variables,params);//new InterferenceGraph(variables, params);
 
-        for (RegisterNode varX: interferenceGraph.getLocalVars()) {
-            for (RegisterNode varY: interferenceGraph.getLocalVars()) {
+        for (MyNode varX: interferenceGraph.localVars) {
+            for (MyNode varY: interferenceGraph.localVars) {
                 if (varX.equals(varY)) {
                     continue;
                 }
                 for (int index = 0; index < nodeOrder.size(); index++) {
-                    if (def.get(index).contains(varX.getName())
-                            && out.get(index).contains(varY.getName())) {
-                        interferenceGraph.addEdge(varX, varY);
+                    if (def.get(index).contains(varX.name)
+                            && out.get(index).contains(varY.name)) {
+                        interferenceGraph.newEdge(varX, varY);
                     }
                 }
             }
@@ -226,15 +223,15 @@ public class MyLifeTimeCalculator {
     }
 
     public void colorInterferenceGraph(int maxK) {
-        Stack<RegisterNode> stack = new Stack<>();
+        Stack<MyNode> stack = new Stack<>();
         int k = 0;
 
         while (interferenceGraph.getVisibleNodesCount() > 0) {
-            for (RegisterNode node: interferenceGraph.getLocalVars()) {
-                if (!node.isVisible()) continue;
+            for (MyNode node: interferenceGraph.localVars) {
+                if (!node.isVisible) continue;
                 int degree = node.countVisibleNeighbors();
                 if (degree < k) {
-                    node.setInvisible();
+                    node.toggleVisible();
                     stack.push(node);
                 } else {
                     k += 1;
@@ -254,17 +251,17 @@ public class MyLifeTimeCalculator {
                     " At least " + k + " registers are needed but " + maxK + " were requested.");
 
         }
-        int startReg = 1 + interferenceGraph.getParams().size();
+        int startReg = 1 + interferenceGraph.params.size();
         while (!stack.empty()) {
-            RegisterNode node = stack.pop();
+            MyNode node = stack.pop();
             for (int reg = startReg; reg <= k + startReg; reg++) {
-                if (node.edgeFreeRegister(reg)) {
-                    node.setRegister(reg);
-                    node.setVisible();
+                if (node.isAllFree(reg)) {
+                    node.updateReg(reg);
+                    node.toggleVisible();
                     break;
                 }
             }
-            if (!node.isVisible()) {
+            if (!node.isVisible) {
                 ollirResult.getReports().add(
                         new Report(
                                 ReportType.ERROR,
@@ -278,14 +275,14 @@ public class MyLifeTimeCalculator {
         }
 
         int reg = 1;
-        for (RegisterNode node: interferenceGraph.getParams()) {
-            node.setRegister(reg++);
+        for (MyNode node: interferenceGraph.params) {
+            node.updateReg(reg++);
         }
 
 
     }
 
-    public InterferenceGraph getInterferenceGraph() {
+    public MyGraph getInterferenceGraph() {
         return interferenceGraph;
     }
 

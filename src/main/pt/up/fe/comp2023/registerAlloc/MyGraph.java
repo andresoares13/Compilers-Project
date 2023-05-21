@@ -15,12 +15,14 @@ public class MyGraph {
     public Set<MyNode> localVars = new HashSet<>();
     public Set<MyNode> params = new HashSet<>();
 
-    public MyGraph(List<String> nodes, List<String> params) {
-        for (int i=0;i<nodes.size();i++){
-            this.localVars.add(new MyNode(nodes.get(i)));
+    public MyGraph(Set<String> nodes, Set<String> params) {
+        for (String node: nodes){
+            MyNode var = new MyNode(node);
+            this.localVars.add(var);
         }
-        for (int i=0;i<params.size();i++){
-            this.params.add(new MyNode(params.get(i)));
+        for (String param: params){
+            MyNode paramNode = new MyNode(param);
+            this.params.add(paramNode);
         }
     }
 
