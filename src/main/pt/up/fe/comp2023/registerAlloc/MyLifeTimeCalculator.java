@@ -18,7 +18,7 @@ public class MyLifeTimeCalculator {
     private List<Set<String>> use;
     private List<Node> nodes;
 
-    private MyGraph interferenceGraph;
+
 
     public MyLifeTimeCalculator(Method method, OllirResult ollirResult) {
         this.method = method;
@@ -176,113 +176,17 @@ public class MyLifeTimeCalculator {
         }
     }
 
-    private String getElementName(Element element) {
-        if (element instanceof Operand operand) {
-            return operand.getName();
-        }
-        return null;
+
+    public List<Node> getNodes(){
+        return this.nodes;
     }
 
-    private List<String> getParamNames() {
-        List<String> names = new ArrayList<>();
-        List<Element> parameters = method.getParams();
-        for (Element element: parameters) {
-            names.add(getElementName(element));
-        }
-        return names;
+    public List<Set<String>> getDef(){
+        return this.def;
     }
 
-    public void buildInterferenceGraph() {
-        Set<String> variables = new HashSet<>();
-        Set<String> params = new HashSet<>();
-
-        for (String variable: method.getVarTable().keySet()) {
-            if (getParamNames().contains(variable)) {
-                params.add(variable);
-            } else if (!variable.equals("this")) {
-                variables.add(variable);
-            }
-        }
-
-        interferenceGraph = new MyGraph(variables,params);//new InterferenceGraph(variables, params);
-
-        for (MyNode varX: interferenceGraph.localVars) {
-            for (MyNode varY: interferenceGraph.localVars) {
-                if (varX.equals(varY)) {
-                    continue;
-                }
-                for (int index = 0; index < nodes.size(); index++) {
-                    if (def.get(index).contains(varX.name)
-                            && out.get(index).contains(varY.name)) {
-                        interferenceGraph.newEdge(varX, varY);
-                    }
-                }
-            }
-        }
-    }
-
-    public void colorInterferenceGraph(int maxK) {
-        Stack<MyNode> stack = new Stack<>();
-        int k = 0;
-
-        while (interferenceGraph.getVisibleNodesCount() > 0) {
-            for (MyNode node: interferenceGraph.localVars) {
-                if (!node.isVisible) continue;
-                int degree = node.countVisibleNeighbors();
-                if (degree < k) {
-                    node.toggleVisible();
-                    stack.push(node);
-                } else {
-                    k += 1;
-                }
-            }
-        }
-
-        if (maxK > 0 && k > maxK) {
-            ollirResult.getReports().add(
-                    new Report(
-                            ReportType.ERROR,
-                            OPTIMIZATION,
-                            -1,
-                            "Not enough registers. At least " + k + " registers are needed.")
-            );
-            throw new RuntimeException("Not enough registers." +
-                    " At least " + k + " registers are needed but " + maxK + " were requested.");
-
-        }
-        int startReg = 1 + interferenceGraph.params.size();
-        while (!stack.empty()) {
-            MyNode node = stack.pop();
-            for (int reg = startReg; reg <= k + startReg; reg++) {
-                if (node.isAllFree(reg)) {
-                    node.updateReg(reg);
-                    node.toggleVisible();
-                    break;
-                }
-            }
-            if (!node.isVisible) {
-                ollirResult.getReports().add(
-                        new Report(
-                                ReportType.ERROR,
-                                OPTIMIZATION,
-                                -1,
-                                "Unexpected error. Register allocation failed.")
-                );
-
-                throw new RuntimeException("Unexpected error. Register allocation failed.");
-            }
-        }
-
-        int reg = 1;
-        for (MyNode node: interferenceGraph.params) {
-            node.updateReg(reg++);
-        }
-
-
-    }
-
-    public MyGraph getInterferenceGraph() {
-        return interferenceGraph;
+    public List<Set<String>> getOut(){
+        return this.out;
     }
 
     public Method getMethod() {

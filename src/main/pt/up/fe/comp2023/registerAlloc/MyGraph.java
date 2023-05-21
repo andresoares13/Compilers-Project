@@ -1,7 +1,9 @@
 package pt.up.fe.comp2023.registerAlloc;
 
+import org.specs.comp.ollir.Element;
 import org.specs.comp.ollir.Method;
 import org.specs.comp.ollir.Node;
+import org.specs.comp.ollir.Operand;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.report.Report;
 import pt.up.fe.comp.jmm.report.ReportType;
@@ -14,16 +16,10 @@ public class MyGraph {
 
     public Set<MyNode> localVars = new HashSet<>();
     public Set<MyNode> params = new HashSet<>();
+    private MyLifeTimeCalculator methodLifetime;
 
-    public MyGraph(Set<String> nodes, Set<String> params) {
-        for (String node: nodes){
-            MyNode var = new MyNode(node);
-            this.localVars.add(var);
-        }
-        for (String param: params){
-            MyNode paramNode = new MyNode(param);
-            this.params.add(paramNode);
-        }
+    public MyGraph(MyLifeTimeCalculator methodLifetime) {
+        this.methodLifetime = methodLifetime;
     }
 
     public void newEdge(MyNode n1, MyNode n2){
@@ -42,58 +38,100 @@ public class MyGraph {
     }
 
 
-    public void initGraph(Method method, List<Node> nodeOrder, List<Set<String>> def, List<Set<String>> out) {
+    public void initGraph() {
+        Set<String> variables = new HashSet<>();
+        Set<String> params = new HashSet<>();
 
-        for (MyNode varX: this.localVars) {
-            for (MyNode varY: this.localVars) {
+        for (String variable: methodLifetime.getMethod().getVarTable().keySet()) {
+            if (getParamNames().contains(variable)) {
+                params.add(variable);
+            } else if (!variable.equals("this")) {
+                variables.add(variable);
+            }
+        }
+
+
+        for (MyNode varX: localVars) {
+            for (MyNode varY: localVars) {
                 if (varX.equals(varY)) {
                     continue;
                 }
-                for (int index = 0; index < nodeOrder.size(); index++) {
-                    if (def.get(index).contains(varX.name)
-                            && out.get(index).contains(varY.name)) {
-                        this.newEdge(varX, varY);
+                for (int index = 0; index < methodLifetime.getNodes().size(); index++) {
+                    if (methodLifetime.getDef().get(index).contains(varX.name) && methodLifetime.getOut().get(index).contains(varY.name)) {
+                        newEdge(varX, varY);
                     }
                 }
             }
         }
+
+        for (String vars: variables){
+            MyNode var = new MyNode(vars);
+            this.localVars.add(var);
+        }
+        for (String param: params){
+            MyNode paramNode = new MyNode(param);
+            this.params.add(paramNode);
+        }
+    }
+
+
+    private List<String> getParamNames() {
+        List<String> names = new ArrayList<>();
+        List<Element> parameters = methodLifetime.getMethod().getParams();
+        for (Element element: parameters) {
+            names.add(getElementName(element));
+        }
+        return names;
+    }
+
+
+    private String getElementName(Element element) {
+        if (element instanceof Operand operand) {
+            return operand.getName();
+        }
+        return null;
     }
 
 
     public void colorGraph(int maxK, OllirResult ollirResult) {
         Stack<MyNode> stack = new Stack<>();
-        int regs = 0;
+        int k = 0;
 
-        while (this.getVisibleNodesCount() > 0) {
-            for (MyNode node: this.localVars) {
+        while (getVisibleNodesCount() > 0) {
+            for (MyNode node: localVars) {
                 if (!node.isVisible) continue;
                 int degree = node.countVisibleNeighbors();
-                if (degree < regs) {
+                if (degree < k) {
                     node.toggleVisible();
                     stack.push(node);
                 } else {
-                    regs += 1;
+                    k += 1;
                 }
             }
         }
 
-        if (maxK > 0 && regs > maxK) {
-            ollirResult.getReports().add(new Report(ReportType.ERROR, OPTIMIZATION, -1, "Not enough registers. At least " + regs + " registers are needed."));
-            return;
+        if (maxK > 0 && k > maxK) {
+            ollirResult.getReports().add(
+                    new Report(
+                            ReportType.ERROR,
+                            OPTIMIZATION,
+                            -1,
+                            "Not enough registers. At least " + k + " registers are needed.")
+            );
+            throw new RuntimeException("Not enough registers." +
+                    " At least " + k + " registers are needed but " + maxK + " were requested.");
 
         }
-        int startReg = 1 + this.params.size();
+        int startReg = 1 + params.size();
         while (!stack.empty()) {
             MyNode node = stack.pop();
-            for (int reg = startReg; reg <= regs + startReg; reg++) {
+            for (int reg = startReg; reg <= k + startReg; reg++) {
                 if (node.isAllFree(reg)) {
                     node.updateReg(reg);
                     node.toggleVisible();
-                    throw new RuntimeException("Not enough registers." +
-                            " At least " + regs + " registers are needed but " + maxK + " were requested.");
+                    break;
                 }
             }
-
             if (!node.isVisible) {
                 ollirResult.getReports().add(
                         new Report(
@@ -105,12 +143,10 @@ public class MyGraph {
 
                 throw new RuntimeException("Unexpected error. Register allocation failed.");
             }
-
-
         }
 
         int reg = 1;
-        for (MyNode node: this.params) {
+        for (MyNode node: params) {
             node.updateReg(reg++);
         }
     }

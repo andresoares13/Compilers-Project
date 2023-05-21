@@ -2,6 +2,7 @@ package pt.up.fe.comp2023;
 
 import org.specs.comp.ollir.Descriptor;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
+import pt.up.fe.comp2023.registerAlloc.MyGraph;
 import pt.up.fe.comp2023.registerAlloc.MyLifeTimeCalculator;
 import pt.up.fe.comp2023.registerAlloc.MyNode;
 
@@ -27,19 +28,25 @@ public class MyRegisterAllocation {
         for (int i=0;i<ollirResult.getOllirClass().getMethods().size();i++){
             MyLifeTimeCalculator methodLifetime = new MyLifeTimeCalculator(ollirResult.getOllirClass().getMethods().get(i),ollirResult);
             methodLifetime.calcInOut();
-            methodLifetime.buildInterferenceGraph();
-            methodLifetime.colorInterferenceGraph(registerNum);
+
+            MyGraph graph = new MyGraph(methodLifetime);
+            graph.initGraph();
+            graph.colorGraph(registerNum,ollirResult);
+
+
             HashMap<String, Descriptor> varTable = methodLifetime.getMethod().getVarTable();
-            for (MyNode node: methodLifetime.getInterferenceGraph().localVars) {
-                varTable.get(node.name).setVirtualReg(node.getReg());
-            }
-            for (MyNode node: methodLifetime.getInterferenceGraph().params) {
-                varTable.get(node.name).setVirtualReg(node.getReg());
-            }
 
             if (varTable.get("this") != null) {
                 varTable.get("this").setVirtualReg(0);
             }
+
+            for (MyNode node: graph.localVars) {
+                varTable.get(node.name).setVirtualReg(node.getReg());
+            }
+            for (MyNode node: graph.params) {
+                varTable.get(node.name).setVirtualReg(node.getReg());
+            }
+
         }
     }
 }
