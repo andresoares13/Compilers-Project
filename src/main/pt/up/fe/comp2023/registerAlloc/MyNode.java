@@ -23,9 +23,7 @@ public class MyNode {
         edges.add(n);
     }
 
-    public void removeEdge(MyNode n) {
-        edges.remove(n);
-    }
+
 
     public int countVisibleNeighbors() {
         int count = 0;
