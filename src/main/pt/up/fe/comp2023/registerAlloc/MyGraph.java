@@ -84,7 +84,7 @@ public class MyGraph {
             this.params.add(paramNode);
         }
     }
-    
+
 
 
     public void colorGraph(int maxK, OllirResult ollirResult) {
@@ -105,15 +105,9 @@ public class MyGraph {
         }
 
         if (maxK > 0 && k > maxK) {
-            ollirResult.getReports().add(
-                    new Report(
-                            ReportType.ERROR,
-                            OPTIMIZATION,
-                            -1,
-                            "Not enough registers. At least " + k + " registers are needed.")
+            ollirResult.getReports().add(new Report(ReportType.ERROR, OPTIMIZATION, -1, "Not enough registers. At least " + k + " registers are needed.")
             );
-            throw new RuntimeException("Not enough registers." +
-                    " At least " + k + " registers are needed but " + maxK + " were requested.");
+            return;
 
         }
         int startReg = 1 + params.size();
@@ -135,7 +129,7 @@ public class MyGraph {
                                 "Unexpected error. Register allocation failed.")
                 );
 
-                throw new RuntimeException("Unexpected error. Register allocation failed.");
+                return;
             }
         }
 
