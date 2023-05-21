@@ -2,7 +2,6 @@ package pt.up.fe.comp2023;
 
 import org.specs.comp.ollir.Descriptor;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.comp2023.registerAlloc.MyLifeTime;
 import pt.up.fe.comp2023.registerAlloc.MyLifeTimeCalculator;
 import pt.up.fe.comp2023.registerAlloc.MyNode;
 
@@ -17,7 +16,7 @@ public class MyRegisterAllocation {
             MyRegisterAllocation allocator = new MyRegisterAllocation();
             allocator.allocate(ollirResult);
         }
-        
+
         return optimized;
     }
 

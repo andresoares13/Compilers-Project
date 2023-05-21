@@ -12,11 +12,11 @@ import static pt.up.fe.comp.jmm.report.Stage.OPTIMIZATION;
 public class MyLifeTimeCalculator {
     private final Method method;
     private final OllirResult ollirResult;
-    private ArrayList<Set<String>> def;
-    private ArrayList<Set<String>> use;
-    private ArrayList<Set<String>> in;
-    private ArrayList<Set<String>> out;
-    private ArrayList<Node> nodeOrder;
+    private List<Set<String>> in;
+    private List<Set<String>> out;
+    private List<Set<String>> def;
+    private List<Set<String>> use;
+    private List<Node> nodes;
 
     private MyGraph interferenceGraph;
 
@@ -27,14 +27,14 @@ public class MyLifeTimeCalculator {
 
     private void orderNodes() {
         Node beginNode = method.getBeginNode();
-        this.nodeOrder = new ArrayList<>();
+        this.nodes = new ArrayList<>();
         dfsOrderNodes(beginNode, new ArrayList<>());
     }
 
     private void dfsOrderNodes(Node node, ArrayList<Node> visited) {
 
         if (node == null
-                || nodeOrder.contains(node)
+                || nodes.contains(node)
                 || visited.contains(node)) {
             return;
         }
@@ -44,11 +44,11 @@ public class MyLifeTimeCalculator {
 
         visited.add(node);
 
-        for (Node succ: node.getSuccessors()) {
-            dfsOrderNodes(succ, visited);
+        for (Node successor: node.getSuccessors()) {
+            dfsOrderNodes(successor, visited);
         }
 
-        nodeOrder.add(node);
+        nodes.add(node);
     }
 
     public void calcInOut() {
@@ -57,7 +57,7 @@ public class MyLifeTimeCalculator {
         out = new ArrayList<>();
         def = new ArrayList<>();
         use = new ArrayList<>();
-        for (Node node: nodeOrder) {
+        for (Node node: nodes) {
             in.add(new HashSet<>());
             out.add(new HashSet<>());
             def.add(new HashSet<>());
@@ -65,25 +65,25 @@ public class MyLifeTimeCalculator {
             calcUseDef(node);
         }
 
-        boolean livenessHasChanged;
+        boolean characterDevelopment;
 
         do  {
-            livenessHasChanged = false;
+            characterDevelopment = false;
 
-            for (int index = 0; index < nodeOrder.size(); index++) {
-                Node node = nodeOrder.get(index);
+            for (int index = 0; index < nodes.size(); index++) {
+                Node node = nodes.get(index);
 
                 Set<String> origIn = new HashSet<>(in.get(index));
                 Set<String> origOut = new HashSet<>(out.get(index));
 
                 out.get(index).clear();
 
-                for (Node succ : node.getSuccessors()) {
-                    int succIndex = nodeOrder.indexOf(succ);
-                    if (succIndex == -1) continue;
-                    Set<String> in_succIndex = in.get(succIndex);
+                for (Node successor : node.getSuccessors()) {
+                    int successorIndex = nodes.indexOf(successor);
+                    if (successorIndex == -1) continue;
+                    Set<String> in_successorIndex = in.get(successorIndex);
 
-                    out.get(index).addAll(in_succIndex);
+                    out.get(index).addAll(in_successorIndex);
                 }
 
                 in.get(index).clear();
@@ -94,25 +94,24 @@ public class MyLifeTimeCalculator {
                 outDefDiff.addAll(use.get(index));
                 in.get(index).addAll(outDefDiff);
 
-                livenessHasChanged = livenessHasChanged ||
-                        !origIn.equals(in.get(index)) || !origOut.equals(out.get(index));
+                characterDevelopment = characterDevelopment || !origIn.equals(in.get(index)) || !origOut.equals(out.get(index));
             }
 
-        } while (livenessHasChanged);
+        } while (characterDevelopment);
     }
 
-    private void addToUseDefSet(Node node, Element val, ArrayList<Set<String>> arr) {
-        int index = nodeOrder.indexOf(node);
+    private void addToUseDefSet(Node node, Element val, List<Set<String>> array) {
+        int index = nodes.indexOf(node);
 
-        if (val instanceof ArrayOperand arrop) {
-            for (Element element: arrop.getIndexOperands()) {
+        if (val instanceof ArrayOperand arrayOp) {
+            for (Element element: arrayOp.getIndexOperands()) {
                 setUse(node, element);
             }
-            arr.get(index).add(arrop.getName());
+            array.get(index).add(arrayOp.getName());
         }
 
         if (val instanceof Operand op && !op.getType().getTypeOfElement().equals(ElementType.THIS)) {
-            arr.get(index).add(op.getName());
+            array.get(index).add(op.getName());
         }
     }
 
@@ -212,7 +211,7 @@ public class MyLifeTimeCalculator {
                 if (varX.equals(varY)) {
                     continue;
                 }
-                for (int index = 0; index < nodeOrder.size(); index++) {
+                for (int index = 0; index < nodes.size(); index++) {
                     if (def.get(index).contains(varX.name)
                             && out.get(index).contains(varY.name)) {
                         interferenceGraph.newEdge(varX, varY);
