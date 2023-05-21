@@ -122,7 +122,9 @@ public class MyLifeTimeCalculator {
 
     private void calcUseDef(Node node, Node parentNode) {
 
-        if (node == null) return;
+        if (node == null){
+            return;
+        }
 
         Node useDefNode = parentNode == null ? node : parentNode;
 
@@ -134,38 +136,62 @@ public class MyLifeTimeCalculator {
             return;
         }
 
-        if (node instanceof AssignInstruction instruction) {
-            setDef(useDefNode, instruction.getDest());
-            calcUseDef(instruction.getRhs(), node);
-        } else if (node instanceof UnaryOpInstruction instruction) {
-            setUse(useDefNode, instruction.getOperand());
-        } else if (node instanceof BinaryOpInstruction instruction) {
-            setUse(useDefNode, instruction.getLeftOperand());
-            setUse(useDefNode, instruction.getRightOperand());
-        } else if (node instanceof ReturnInstruction instruction) {
-            setUse(useDefNode, instruction.getOperand());
-        } else if (node instanceof CallInstruction instruction) {
-            setUse(useDefNode, instruction.getFirstArg());
-            if (instruction.getListOfOperands() != null) {
-                for (Element arg: instruction.getListOfOperands()) {
-                    setUse(useDefNode, arg);
+
+        switch (node.getClass().getSimpleName()) {
+            case "SingleOpInstruction":
+                SingleOpInstruction singleOpInstruction = (SingleOpInstruction) node;
+                setUse(useDefNode, singleOpInstruction.getSingleOperand());
+                break;
+            case "BinaryOpInstruction":
+                BinaryOpInstruction binaryOpInstruction = (BinaryOpInstruction) node;
+                setUse(useDefNode, binaryOpInstruction.getLeftOperand());
+                setUse(useDefNode, binaryOpInstruction.getRightOperand());
+                break;
+            case "UnaryOpInstruction":
+                UnaryOpInstruction unaryOpInstruction = (UnaryOpInstruction) node;
+                setUse(useDefNode, unaryOpInstruction.getOperand());
+                break;
+            case "GetFieldInstruction":
+                GetFieldInstruction getFieldInstruction = (GetFieldInstruction) node;
+                setUse(useDefNode, getFieldInstruction.getFirstOperand());
+                break;
+            case "ReturnInstruction":
+                ReturnInstruction returnInstruction = (ReturnInstruction) node;
+                setUse(useDefNode, returnInstruction.getOperand());
+                break;
+            case "OpCondInstruction":
+                OpCondInstruction opCondInstruction = (OpCondInstruction) node;
+                for (Element operand: opCondInstruction.getOperands()) {
+                    setUse(useDefNode, operand);
                 }
-            }
-        } else if (node instanceof GetFieldInstruction instruction) {
-            setUse(useDefNode, instruction.getFirstOperand());
-        } else if (node instanceof PutFieldInstruction instruction) {
-            setUse(useDefNode, instruction.getFirstOperand());
-            setUse(useDefNode, instruction.getThirdOperand());
-        } else if (node instanceof SingleOpInstruction instruction) {
-            setUse(useDefNode, instruction.getSingleOperand());
-        } else if (node instanceof OpCondInstruction instruction) {
-            for (Element operand: instruction.getOperands()) {
-                setUse(useDefNode, operand);
-            }
-        } else if (node instanceof SingleOpCondInstruction instruction) {
-            for (Element operand: instruction.getOperands()) {
-                setUse(useDefNode, operand);
-            }
+                break;
+            case "AssignInstruction":
+                AssignInstruction assignInstruction = (AssignInstruction) node;
+                setDef(useDefNode, assignInstruction.getDest());
+                calcUseDef(assignInstruction.getRhs(), node);
+                break;
+            case "PutFieldInstruction":
+                PutFieldInstruction putFieldInstruction = (PutFieldInstruction) node;
+                setUse(useDefNode, putFieldInstruction.getFirstOperand());
+                setUse(useDefNode, putFieldInstruction.getThirdOperand());
+                break;
+            case "CallInstruction":
+                CallInstruction callInstruction = (CallInstruction) node;
+                setUse(useDefNode, callInstruction.getFirstArg());
+                if (callInstruction.getListOfOperands() != null) {
+                    for (Element arg: callInstruction.getListOfOperands()) {
+                        setUse(useDefNode, arg);
+                    }
+                }
+                break;
+            case "SingleOpCondInstruction":
+                SingleOpCondInstruction singleOpCondInstruction = (SingleOpCondInstruction) node;
+                for (Element operand: singleOpCondInstruction.getOperands()) {
+                    setUse(useDefNode, operand);
+                }
+                break;
+            default:
+                break;
         }
     }
 

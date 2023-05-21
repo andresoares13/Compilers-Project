@@ -1,8 +1,6 @@
 package pt.up.fe.comp2023.registerAlloc;
 
 import org.specs.comp.ollir.Element;
-import org.specs.comp.ollir.Method;
-import org.specs.comp.ollir.Node;
 import org.specs.comp.ollir.Operand;
 import pt.up.fe.comp.jmm.ollir.OllirResult;
 import pt.up.fe.comp.jmm.report.Report;
@@ -16,7 +14,7 @@ public class MyGraph {
 
     public Set<MyNode> localVars = new HashSet<>();
     public Set<MyNode> params = new HashSet<>();
-    private MyLifeTimeCalculator methodLifetime;
+    private final MyLifeTimeCalculator methodLifetime;
 
     public MyGraph(MyLifeTimeCalculator methodLifetime) {
         this.methodLifetime = methodLifetime;
