@@ -17,9 +17,32 @@ public class MyLifeTime {
     }
 
     public void allocate() {
+        ollirResult.getOllirClass().buildCFGs();
+        Integer registerNum = Integer.parseInt(ollirResult.getConfig().get("registerAllocation"));
+        for (int i=0;i<ollirResult.getOllirClass().getMethods().size();i++){
+            MyLifeTimeCalculator methodLifetime = new MyLifeTimeCalculator(ollirResult.getOllirClass().getMethods().get(i),ollirResult);
+            methodLifetime.calcInOut();
+            methodLifetime.buildInterferenceGraph();
+            methodLifetime.colorInterferenceGraph(registerNum);
+            HashMap<String, Descriptor> varTable = methodLifetime.getMethod().getVarTable();
+            for (MyNode node: methodLifetime.getInterferenceGraph().localVars) {
+                varTable.get(node.name).setVirtualReg(node.getReg());
+            }
+            for (MyNode node: methodLifetime.getInterferenceGraph().params) {
+                varTable.get(node.name).setVirtualReg(node.getReg());
+            }
+
+            if (varTable.get("this") != null) {
+                varTable.get("this").setVirtualReg(0);
+            }
+        }
+
+        /*
         calcInOut();
         colorGraph();
         allocateRegisters();
+
+         */
     }
 
 
