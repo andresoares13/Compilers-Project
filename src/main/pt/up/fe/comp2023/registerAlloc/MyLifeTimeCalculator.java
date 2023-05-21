@@ -9,8 +9,7 @@ import java.util.*;
 
 import static pt.up.fe.comp.jmm.report.Stage.OPTIMIZATION;
 
-public class DataFlowAnalysisAux {
-
+public class MyLifeTimeCalculator {
     private final Method method;
     private final OllirResult ollirResult;
     private ArrayList<Set<String>> def;
@@ -21,7 +20,7 @@ public class DataFlowAnalysisAux {
 
     private InterferenceGraph interferenceGraph;
 
-    public DataFlowAnalysisAux(Method method, OllirResult ollirResult) {
+    public MyLifeTimeCalculator(Method method, OllirResult ollirResult) {
         this.method = method;
         this.ollirResult = ollirResult;
     }
@@ -293,45 +292,4 @@ public class DataFlowAnalysisAux {
     public Method getMethod() {
         return method;
     }
-
-
-    public boolean eliminateDeadVars() {
-        boolean hasDeadVars = false;
-        ArrayList<Instruction> instructions = method.getInstructions();
-        ArrayList<Instruction> copyInstructions = new ArrayList<>(instructions);
-        for (Instruction instruction: copyInstructions) {
-            int index = nodeOrder.indexOf(instruction);
-
-            if (instruction instanceof AssignInstruction assignInstruction) {
-                String name = getElementName(assignInstruction.getDest());
-
-                if (name != null && def.get(index).contains(name) && !out.get(index).contains(name)) {
-                    List<Node> predecessors = instruction.getPredecessors();
-                    List<Node> successors = instruction.getSuccessors();
-
-                    for (Node predecessor: predecessors) {
-                        for (Node successor: successors) {
-                            predecessor.addSucc(successor);
-                            successor.addPred(predecessor);
-                        }
-                    }
-                    List<String> labels = method.getLabels(instruction);
-
-                    for (String label: labels) {
-                        method.getLabels().remove(label);
-                        for (Node successor: successors) {
-                            method.addLabel(label, (Instruction) successor);
-                        }
-                    }
-
-                    instructions.remove(instruction);
-                    hasDeadVars = true;
-                }
-            }
-        }
-        if (hasDeadVars) method.buildVarTable();
-
-        return hasDeadVars;
-    }
-
 }

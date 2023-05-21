@@ -10,7 +10,7 @@ import java.util.*;
 public class MyLifeTime {
 
     private OllirResult ollirResult;
-    private ArrayList<DataFlowAnalysisAux> methodFlowList;
+    private ArrayList<MyLifeTimeCalculator> methodFlowList;
 
     public MyLifeTime(OllirResult ollirResult){
         this.ollirResult = ollirResult;
@@ -30,14 +30,14 @@ public class MyLifeTime {
         this.methodFlowList = new ArrayList<>();
 
         for (Method method: methods) {
-            DataFlowAnalysisAux methodFlow = new DataFlowAnalysisAux(method, ollirResult);
+            MyLifeTimeCalculator methodFlow = new MyLifeTimeCalculator(method, ollirResult);
             methodFlow.calcInOut();
             methodFlowList.add(methodFlow);
         }
     }
 
     public void colorGraph() {
-        for (DataFlowAnalysisAux methodFlow: methodFlowList) {
+        for (MyLifeTimeCalculator methodFlow: methodFlowList) {
             methodFlow.buildInterferenceGraph();
             String registers = ollirResult.getConfig().get("registerAllocation");
 
@@ -46,7 +46,7 @@ public class MyLifeTime {
     }
 
     public void allocateRegisters() {
-        for (DataFlowAnalysisAux methodFlow: methodFlowList) {
+        for (MyLifeTimeCalculator methodFlow: methodFlowList) {
             HashMap<String, Descriptor> varTable = methodFlow.getMethod().getVarTable();
             for (RegisterNode node: methodFlow.getInterferenceGraph().getLocalVars()) {
                 varTable.get(node.getName()).setVirtualReg(node.getRegister());

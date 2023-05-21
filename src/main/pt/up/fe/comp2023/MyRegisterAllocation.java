@@ -1,7 +1,6 @@
 package pt.up.fe.comp2023;
 
 import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.comp2023.registerAlloc.DataFlowAnalysis;
 import pt.up.fe.comp2023.registerAlloc.MyLifeTime;
 
 
