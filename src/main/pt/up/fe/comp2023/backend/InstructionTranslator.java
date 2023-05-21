@@ -320,9 +320,11 @@ public class InstructionTranslator {
         switch (operationType) {
             case ADD -> {
                 // this fixes the iinc_right, but it makes the OpPrecedence_Array_And_Sum fail
-                if (leftElement.isLiteral() && !rightElement.isLiteral() && !(rightElement instanceof ArrayOperand))
+                if (leftElement.isLiteral() && !rightElement.isLiteral() &&
+                        !(rightElement instanceof ArrayOperand) && iinc_condition((LiteralElement) leftElement, "add"))
                     return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
-                if (!leftElement.isLiteral() && rightElement.isLiteral() && !(leftElement instanceof ArrayOperand))
+                if (!leftElement.isLiteral() && rightElement.isLiteral() &&
+                        !(leftElement instanceof ArrayOperand) && iinc_condition((LiteralElement) rightElement, "add"))
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
 
                 jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
@@ -333,7 +335,8 @@ public class InstructionTranslator {
             }
             case SUB -> {
                 // this fixes the iinc_min, but it makes the ControFlow_While_And_If fail
-                if (!leftElement.isLiteral() && rightElement.isLiteral() && !(leftElement instanceof ArrayOperand)) {
+                if (!leftElement.isLiteral() && rightElement.isLiteral() &&
+                        !(leftElement instanceof ArrayOperand) && iinc_condition((LiteralElement) rightElement, "sub")) {
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
                 }
 
@@ -384,6 +387,15 @@ public class InstructionTranslator {
             }
         }
         return jasminInstruction.toString();
+    }
+
+    private boolean iinc_condition(LiteralElement literalElement, String op) {
+        String literal = JasminUtils.trimLiteral(literalElement.getLiteral());
+        int literalInt = Integer.parseInt(literal);
+        if(op.equals("add"))
+            return !(literalInt > (Math.pow(2, 7) - 1));
+        else
+            return !(literalInt > Math.pow(2, 7));
     }
 
     private String iinc(LiteralElement literalElement, Operand operand, Method method, OperationType opType) {
