@@ -189,6 +189,10 @@ public class InstructionTranslator {
             }
             return dealWithCallInstruction(callInstruction, method, true) + "\n" + getCorrespondingStore(dest, method);
         }
+        else if(rhs.getInstType() == InstructionType.BINARYOPER) {
+            Operand var = (Operand) dest;
+            return dealWithBinaryOp((BinaryOpInstruction) rhs, method, var.getName()) + "\n" + getCorrespondingStore(dest, method);
+        }
 
         return translateInstruction(rhs, method) + "\n" + getCorrespondingStore(dest, method);
     }
@@ -303,6 +307,10 @@ public class InstructionTranslator {
 
     // BINARYOPER
     public String translateInstruction(BinaryOpInstruction instruction, Method method) {
+        return dealWithBinaryOp(instruction, method, "");
+    }
+
+    private String dealWithBinaryOp(BinaryOpInstruction instruction, Method method, String dest) {
         StringBuilder jasminInstruction = new StringBuilder();
         Operation operation = instruction.getOperation();
         OperationType operationType = operation.getOpType();
@@ -320,12 +328,16 @@ public class InstructionTranslator {
         switch (operationType) {
             case ADD -> {
                 // this fixes the iinc_right, but it makes the OpPrecedence_Array_And_Sum fail
-                if (leftElement.isLiteral() && !rightElement.isLiteral() &&
-                        !(rightElement instanceof ArrayOperand) && iinc_condition((LiteralElement) leftElement, "add"))
-                    return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
-                if (!leftElement.isLiteral() && rightElement.isLiteral() &&
-                        !(leftElement instanceof ArrayOperand) && iinc_condition((LiteralElement) rightElement, "add"))
-                    return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
+                if(!dest.isEmpty()) {
+                    if (leftElement.isLiteral() && !rightElement.isLiteral() &&
+                            !(rightElement instanceof ArrayOperand) &&
+                            iinc_condition((LiteralElement) leftElement, "add", dest, (Operand) rightElement))
+                        return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
+                    if (!leftElement.isLiteral() && rightElement.isLiteral() &&
+                            !(leftElement instanceof ArrayOperand) &&
+                            iinc_condition((LiteralElement) rightElement, "add", dest, (Operand) leftElement))
+                        return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
+                }
 
                 jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
@@ -336,7 +348,8 @@ public class InstructionTranslator {
             case SUB -> {
                 // this fixes the iinc_min, but it makes the ControFlow_While_And_If fail
                 if (!leftElement.isLiteral() && rightElement.isLiteral() &&
-                        !(leftElement instanceof ArrayOperand) && iinc_condition((LiteralElement) rightElement, "sub")) {
+                        !(leftElement instanceof ArrayOperand) &&
+                        iinc_condition((LiteralElement) rightElement, "sub", dest, (Operand) leftElement)) {
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
                 }
 
@@ -389,13 +402,16 @@ public class InstructionTranslator {
         return jasminInstruction.toString();
     }
 
-    private boolean iinc_condition(LiteralElement literalElement, String op) {
+    private boolean iinc_condition(LiteralElement literalElement, String op, String dest, Operand nonLiteral) {
         String literal = JasminUtils.trimLiteral(literalElement.getLiteral());
         int literalInt = Integer.parseInt(literal);
+
+        String var = nonLiteral.getName();
+
         if(op.equals("add"))
-            return !(literalInt > (Math.pow(2, 7) - 1));
+            return !(literalInt > (Math.pow(2, 7) - 1)) && dest.equals(var);
         else
-            return !(literalInt > Math.pow(2, 7));
+            return !(literalInt > Math.pow(2, 7)) && dest.equals(var);
     }
 
     private String iinc(LiteralElement literalElement, Operand operand, Method method, OperationType opType) {
