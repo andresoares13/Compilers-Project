@@ -6,7 +6,7 @@ import java.util.*;
 
 
 public class MyLifeTimeCalculator {
-    private final Method method;
+    private Method method;
     private List<Set<String>> out;
     private List<Set<String>> def;
     private List<Set<String>> use;
@@ -26,15 +26,13 @@ public class MyLifeTimeCalculator {
 
     private void dfsOrderNodes(Node node, ArrayList<Node> visited) {
 
-        if (node == null
-                || nodes.contains(node)
-                || visited.contains(node)) {
+        if (node == null || nodes.contains(node) || visited.contains(node)) {
             return;
         }
 
-        if (node instanceof Instruction instruction && !method.getInstructions().contains(instruction))
-            return;
-
+        if (node.getClass().getSimpleName().equals("Instruction") && !method.getInstructions().contains(node)) {
+           return;
+        }
         visited.add(node);
 
         for (Node successor: node.getSuccessors()) {
@@ -55,7 +53,7 @@ public class MyLifeTimeCalculator {
             out.add(new HashSet<>());
             def.add(new HashSet<>());
             use.add(new HashSet<>());
-            calcUseDef(node);
+            calcUseDef(node,null);
         }
 
         boolean characterDevelopment;
@@ -116,9 +114,6 @@ public class MyLifeTimeCalculator {
         addToUseDefSet(node, val, use);
     }
 
-    private void calcUseDef(Node node) {
-        calcUseDef(node, null);
-    }
 
     private void calcUseDef(Node node, Node parentNode) {
 
@@ -128,11 +123,7 @@ public class MyLifeTimeCalculator {
 
         Node useDefNode = parentNode == null ? node : parentNode;
 
-        if (node.getNodeType().equals(NodeType.BEGIN)) {
-            return;
-        }
-
-        if (node.getNodeType().equals(NodeType.END)) {
+        if (node.getNodeType().equals(NodeType.END) || node.getNodeType().equals(NodeType.BEGIN)) {
             return;
         }
 
