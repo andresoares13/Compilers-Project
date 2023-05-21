@@ -319,9 +319,10 @@ public class InstructionTranslator {
 
         switch (operationType) {
             case ADD -> {
-                if (leftElement.isLiteral() && !rightElement.isLiteral())
+                // this fixes the iinc_right, but it makes the OpPrecedence_Array_And_Sum fail
+                if (leftElement.isLiteral() && !rightElement.isLiteral() && !(rightElement instanceof ArrayOperand))
                     return iinc((LiteralElement) leftElement, (Operand) rightElement, method, operationType);
-                if (!leftElement.isLiteral() && rightElement.isLiteral())
+                if (!leftElement.isLiteral() && rightElement.isLiteral() && !(leftElement instanceof ArrayOperand))
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
 
                 jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
@@ -331,10 +332,10 @@ public class InstructionTranslator {
                 jasminInstruction.append("iadd");
             }
             case SUB -> {
-                /*if (!leftElement.isLiteral() && rightElement.isLiteral()) {
-                    manageStack(1);
+                // this fixes the iinc_min, but it makes the ControFlow_While_And_If fail
+                if (!leftElement.isLiteral() && rightElement.isLiteral() && !(leftElement instanceof ArrayOperand)) {
                     return iinc((LiteralElement) rightElement, (Operand) leftElement, method, operationType);
-                }*/
+                }
 
                 jasminInstruction.append(getCorrespondingLoad(leftElement, method)).append("\n");
                 jasminInstruction.append(getCorrespondingLoad(rightElement, method)).append("\n");
