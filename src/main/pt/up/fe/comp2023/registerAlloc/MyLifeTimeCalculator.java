@@ -1,18 +1,12 @@
 package pt.up.fe.comp2023.registerAlloc;
 
 import org.specs.comp.ollir.*;
-import pt.up.fe.comp.jmm.ollir.OllirResult;
-import pt.up.fe.comp.jmm.report.Report;
-import pt.up.fe.comp.jmm.report.ReportType;
-
 import java.util.*;
 
-import static pt.up.fe.comp.jmm.report.Stage.OPTIMIZATION;
+
 
 public class MyLifeTimeCalculator {
     private final Method method;
-    private final OllirResult ollirResult;
-    private List<Set<String>> in;
     private List<Set<String>> out;
     private List<Set<String>> def;
     private List<Set<String>> use;
@@ -20,9 +14,8 @@ public class MyLifeTimeCalculator {
 
 
 
-    public MyLifeTimeCalculator(Method method, OllirResult ollirResult) {
+    public MyLifeTimeCalculator(Method method) {
         this.method = method;
-        this.ollirResult = ollirResult;
     }
 
     private void orderNodes() {
@@ -53,7 +46,7 @@ public class MyLifeTimeCalculator {
 
     public void calcInOut() {
         orderNodes();
-        in = new ArrayList<>();
+        List<Set<String>> in = new ArrayList<>();
         out = new ArrayList<>();
         def = new ArrayList<>();
         use = new ArrayList<>();

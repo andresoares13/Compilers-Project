@@ -26,7 +26,7 @@ public class MyRegisterAllocation {
         ollirResult.getOllirClass().buildCFGs();
         Integer registerNum = Integer.parseInt(ollirResult.getConfig().get("registerAllocation"));
         for (int i=0;i<ollirResult.getOllirClass().getMethods().size();i++){
-            MyLifeTimeCalculator methodLifetime = new MyLifeTimeCalculator(ollirResult.getOllirClass().getMethods().get(i),ollirResult);
+            MyLifeTimeCalculator methodLifetime = new MyLifeTimeCalculator(ollirResult.getOllirClass().getMethods().get(i));
             methodLifetime.calcInOut();
 
             MyGraph graph = new MyGraph(methodLifetime);

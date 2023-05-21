@@ -43,13 +43,24 @@ public class MyGraph {
         Set<String> params = new HashSet<>();
 
         for (String variable: methodLifetime.getMethod().getVarTable().keySet()) {
-            if (getParamNames().contains(variable)) {
+            List<String> parameters = new ArrayList<>();
+            List<Element> elements = methodLifetime.getMethod().getParams();
+            for (int i=0;i<elements.size();i++) {
+                if (elements.get(i) instanceof Operand operand) {
+                    parameters.add((operand.getName()));
+                }
+                else{
+                    parameters.add(null);
+                }
+
+            }
+
+            if (parameters.contains(variable)) {
                 params.add(variable);
             } else if (!variable.equals("this")) {
                 variables.add(variable);
             }
         }
-
 
         for (MyNode varX: localVars) {
             for (MyNode varY: localVars) {
@@ -73,24 +84,7 @@ public class MyGraph {
             this.params.add(paramNode);
         }
     }
-
-
-    private List<String> getParamNames() {
-        List<String> names = new ArrayList<>();
-        List<Element> parameters = methodLifetime.getMethod().getParams();
-        for (Element element: parameters) {
-            names.add(getElementName(element));
-        }
-        return names;
-    }
-
-
-    private String getElementName(Element element) {
-        if (element instanceof Operand operand) {
-            return operand.getName();
-        }
-        return null;
-    }
+    
 
 
     public void colorGraph(int maxK, OllirResult ollirResult) {
