@@ -105,8 +105,7 @@ public class MyGraph {
         }
 
         if (maxK > 0 && k > maxK) {
-            ollirResult.getReports().add(new Report(ReportType.ERROR, OPTIMIZATION, -1, "Not enough registers. At least " + k + " registers are needed.")
-            );
+            ollirResult.getReports().add(new Report(ReportType.ERROR, OPTIMIZATION, -1, "Not enough registers. At least " + k + " registers are needed."));
             return;
 
         }
@@ -119,17 +118,6 @@ public class MyGraph {
                     node.toggleVisible();
                     break;
                 }
-            }
-            if (!node.isVisible) {
-                ollirResult.getReports().add(
-                        new Report(
-                                ReportType.ERROR,
-                                OPTIMIZATION,
-                                -1,
-                                "Unexpected error. Register allocation failed.")
-                );
-
-                return;
             }
         }
 
