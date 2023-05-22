@@ -43,21 +43,20 @@ public class MyLifeTimeCalculator {
     }
 
     public void InOutGenerator() {
-        boolean characterDevelopment;
         orderNodes();
         List<Set<String>> in = new ArrayList<>();
         out = new ArrayList<>();
         def = new ArrayList<>();
         use = new ArrayList<>();
-
-        for (int i=0;i<nodes.size();i++){
+        for (Node node: nodes) {
             in.add(new HashSet<>());
             out.add(new HashSet<>());
             def.add(new HashSet<>());
             use.add(new HashSet<>());
-            UseDefGenerator(nodes.get(i),null);
+            UseDefGenerator(node,null);
         }
 
+        boolean characterDevelopment;
 
         do  {
             characterDevelopment = false;
@@ -95,21 +94,16 @@ public class MyLifeTimeCalculator {
     private void addToUseDefSet(Node node, Element val, List<Set<String>> array) {
         int index = nodes.indexOf(node);
 
-        if (val.getClass().getSimpleName().equals("ArrayOperand")) {
-            ArrayOperand arrayOp = (ArrayOperand) val;
-            for (Element element : arrayOp.getIndexOperands()) {
+        if (val instanceof ArrayOperand arrayOp) {
+            for (Element element: arrayOp.getIndexOperands()) {
                 setUse(node, element);
             }
             array.get(index).add(arrayOp.getName());
         }
 
-        if (Operand.class.isInstance(val)) {
-            Operand op = (Operand) val;
-            if (!op.getType().getTypeOfElement().equals(ElementType.THIS)) {
-                array.get(index).add(op.getName());
-            }
+        if (val instanceof Operand op && !op.getType().getTypeOfElement().equals(ElementType.THIS)) {
+            array.get(index).add(op.getName());
         }
-
     }
 
 
