@@ -53,9 +53,9 @@ public class MyLifeTimeCalculator {
             UseDefGenerator(node,null);
         }
 
-        boolean characterDevelopment;
+        boolean characterDevelopment = true;
 
-        do  {
+        while(characterDevelopment) {
             characterDevelopment = false;
 
             for (int index = 0; index < nodes.size(); index++) {
@@ -84,8 +84,7 @@ public class MyLifeTimeCalculator {
 
                 characterDevelopment = characterDevelopment || !origIn.equals(in.get(index)) || !origOut.equals(out.get(index));
             }
-
-        } while (characterDevelopment);
+        }
     }
 
     private void addToUseDefSet(Node node, Element val, List<Set<String>> array) {
