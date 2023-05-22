@@ -43,14 +43,9 @@ public class MyGraph {
         for (String variable: methodLifetime.getMethod().getVarTable().keySet()) {
             List<String> parameters = new ArrayList<>();
             List<Element> elements = methodLifetime.getMethod().getParams();
-            for (int i=0;i<elements.size();i++) {
-                if (elements.get(i) instanceof Operand operand) {
-                    parameters.add((operand.getName()));
-                }
-                else{
-                    parameters.add(null);
-                }
-
+            for (int i = 0; i < elements.size(); i++) {
+                Operand operand = (elements.get(i) instanceof Operand) ? (Operand) elements.get(i) : null;
+                parameters.add((operand != null) ? operand.getName() : null);
             }
 
             if (parameters.contains(variable)) {
@@ -85,32 +80,33 @@ public class MyGraph {
 
 
 
-    public void colorGraph(int maxK, OllirResult ollirResult) {
+    public void colorGraph(int maxRegs, OllirResult ollirResult) {
+
+        int registerNum = 0;
         Stack<MyNode> stack = new Stack<>();
-        int k = 0;
 
         while (getVisibleNodesCount() > 0) {
             for (MyNode node: localVars) {
                 if (!node.isVisible) continue;
                 int degree = node.countVisibleNeighbors();
-                if (degree < k) {
+                if (degree < registerNum) {
                     node.toggleVisible();
                     stack.push(node);
                 } else {
-                    k += 1;
+                    registerNum += 1;
                 }
             }
         }
 
-        if (maxK > 0 && k > maxK) {
-            ollirResult.getReports().add(new Report(ReportType.ERROR, OPTIMIZATION, -1, "Not enough registers. At least " + k + " registers are needed."));
+        if (maxRegs > 0 && registerNum > maxRegs) {
+            ollirResult.getReports().add(new Report(ReportType.ERROR, OPTIMIZATION, -1, "Not enough registers. At least " + registerNum + " registers are needed."));
             return;
 
         }
         int startReg = 1 + params.size();
         while (!stack.empty()) {
             MyNode node = stack.pop();
-            for (int reg = startReg; reg <= k + startReg; reg++) {
+            for (int reg = startReg; reg <= registerNum + startReg; reg++) {
                 if (node.isAllFree(reg)) {
                     node.updateReg(reg);
                     node.toggleVisible();
