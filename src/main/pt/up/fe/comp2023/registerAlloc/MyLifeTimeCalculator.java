@@ -7,9 +7,9 @@ import java.util.*;
 
 public class MyLifeTimeCalculator {
     private Method method;
-    private List<Set<String>> out;
-    private List<Set<String>> def;
-    private List<Set<String>> use;
+    private List<Set<String>> out = new ArrayList<>();
+    private List<Set<String>> def = new ArrayList<>();
+    private List<Set<String>> use = new ArrayList<>();
     private List<Node> nodes;
 
 
@@ -43,11 +43,8 @@ public class MyLifeTimeCalculator {
     }
 
     public void InOutGenerator() {
-        orderNodes();
         List<Set<String>> in = new ArrayList<>();
-        out = new ArrayList<>();
-        def = new ArrayList<>();
-        use = new ArrayList<>();
+        orderNodes();
         for (Node node: nodes) {
             in.add(new HashSet<>());
             out.add(new HashSet<>());
