@@ -42,21 +42,22 @@ public class MyLifeTimeCalculator {
         nodes.add(node);
     }
 
-    public void calcInOut() {
+    public void InOutGenerator() {
+        boolean characterDevelopment;
         orderNodes();
         List<Set<String>> in = new ArrayList<>();
         out = new ArrayList<>();
         def = new ArrayList<>();
         use = new ArrayList<>();
-        for (Node node: nodes) {
+
+        for (int i=0;i<nodes.size();i++){
             in.add(new HashSet<>());
             out.add(new HashSet<>());
             def.add(new HashSet<>());
             use.add(new HashSet<>());
-            calcUseDef(node,null);
+            UseDefGenerator(nodes.get(i),null);
         }
 
-        boolean characterDevelopment;
 
         do  {
             characterDevelopment = false;
@@ -94,16 +95,38 @@ public class MyLifeTimeCalculator {
     private void addToUseDefSet(Node node, Element val, List<Set<String>> array) {
         int index = nodes.indexOf(node);
 
-        if (val instanceof ArrayOperand arrayOp) {
-            for (Element element: arrayOp.getIndexOperands()) {
+        if (val.getClass().getSimpleName().equals("ArrayOperand")) {
+            ArrayOperand arrayOp = (ArrayOperand) val;
+            for (Element element : arrayOp.getIndexOperands()) {
                 setUse(node, element);
             }
             array.get(index).add(arrayOp.getName());
         }
 
-        if (val instanceof Operand op && !op.getType().getTypeOfElement().equals(ElementType.THIS)) {
-            array.get(index).add(op.getName());
+        if (Operand.class.isInstance(val)) {
+            Operand op = (Operand) val;
+            if (!op.getType().getTypeOfElement().equals(ElementType.THIS)) {
+                array.get(index).add(op.getName());
+            }
         }
+
+    }
+
+
+    public List<Node> getNodes(){
+        return this.nodes;
+    }
+
+    public List<Set<String>> getDef(){
+        return this.def;
+    }
+
+    public List<Set<String>> getOut(){
+        return this.out;
+    }
+
+    public Method getMethod() {
+        return method;
     }
 
     private void setDef(Node node, Element dest) {
@@ -115,7 +138,7 @@ public class MyLifeTimeCalculator {
     }
 
 
-    private void calcUseDef(Node node, Node parentNode) {
+    private void UseDefGenerator(Node node, Node parentNode) {
 
         if (node == null){
             return;
@@ -159,7 +182,7 @@ public class MyLifeTimeCalculator {
             case "AssignInstruction":
                 AssignInstruction assignInstruction = (AssignInstruction) node;
                 setDef(useDefNode, assignInstruction.getDest());
-                calcUseDef(assignInstruction.getRhs(), node);
+                UseDefGenerator(assignInstruction.getRhs(), node);
                 break;
             case "PutFieldInstruction":
                 PutFieldInstruction putFieldInstruction = (PutFieldInstruction) node;
@@ -187,19 +210,5 @@ public class MyLifeTimeCalculator {
     }
 
 
-    public List<Node> getNodes(){
-        return this.nodes;
-    }
 
-    public List<Set<String>> getDef(){
-        return this.def;
-    }
-
-    public List<Set<String>> getOut(){
-        return this.out;
-    }
-
-    public Method getMethod() {
-        return method;
-    }
 }
