@@ -21,10 +21,10 @@ public class MyLifeTimeCalculator {
     private void orderNodes() {
         Node beginNode = method.getBeginNode();
         this.nodes = new ArrayList<>();
-        dfsOrderNodes(beginNode, new ArrayList<>());
+        OrderNodesAux(beginNode, new ArrayList<>());
     }
 
-    private void dfsOrderNodes(Node node, ArrayList<Node> visited) {
+    private void OrderNodesAux(Node node, ArrayList<Node> visited) {
 
         if (node == null || nodes.contains(node) || visited.contains(node)) {
             return;
@@ -36,7 +36,7 @@ public class MyLifeTimeCalculator {
         visited.add(node);
 
         for (Node successor: node.getSuccessors()) {
-            dfsOrderNodes(successor, visited);
+            OrderNodesAux(successor, visited);
         }
 
         nodes.add(node);
@@ -68,7 +68,9 @@ public class MyLifeTimeCalculator {
 
                 for (Node successor : node.getSuccessors()) {
                     int successorIndex = nodes.indexOf(successor);
-                    if (successorIndex == -1) continue;
+                    if (successorIndex == -1){
+                        continue;
+                    }
                     Set<String> in_successorIndex = in.get(successorIndex);
 
                     out.get(index).addAll(in_successorIndex);
@@ -89,16 +91,21 @@ public class MyLifeTimeCalculator {
 
     private void addToUseDefSet(Node node, Element val, List<Set<String>> array) {
         int index = nodes.indexOf(node);
+       
 
-        if (val instanceof ArrayOperand arrayOp) {
-            for (Element element: arrayOp.getIndexOperands()) {
+        if (ArrayOperand.class.isInstance(val)) {
+            ArrayOperand arrayOp = (ArrayOperand) val;
+            for (Element element : arrayOp.getIndexOperands()) {
                 setUse(node, element);
             }
             array.get(index).add(arrayOp.getName());
         }
 
-        if (val instanceof Operand op && !op.getType().getTypeOfElement().equals(ElementType.THIS)) {
-            array.get(index).add(op.getName());
+        if (Operand.class.isInstance(val)) {
+            Operand op = (Operand) val;
+            if (!op.getType().getTypeOfElement().equals(ElementType.THIS)) {
+                array.get(index).add(op.getName());
+            }
         }
     }
 
